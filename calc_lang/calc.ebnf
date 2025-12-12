@@ -1,0 +1,16 @@
+Expr -> Bexp | Aexp 
+
+Bexp -> Bterm { "||" Bterm } 
+Bterm -> Bfact   { "&&" Bfact   } 
+
+Bfact -> ["!"] Batom | Batom 
+Batom -> "true" | "false" | Aexp Relop Aexp  | "(" Bexp ")" 
+
+Relop -> "==" | "!=" | "<" | "<=" | ">" | ">=" 
+
+Aexp -> Term { ("+" | "-") Term } 
+Term -> Power { ("*" | "/") Power } 
+
+Power -> Factor {"^" Factor} 
+Factor -> ["-"] Atom 
+Atom -> INT | "(" Aexp ")" 
