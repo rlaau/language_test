@@ -14,27 +14,6 @@ func NewParser() *Parser {
 	return &Parser{}
 }
 
-type Symbol int
-
-const (
-	Expr Symbol = iota
-
-	Bexp
-	Bterm
-	Bfact
-	Batom
-
-	Relop
-
-	Aexp
-	Term
-	Power
-	Factor
-	Atom
-
-	Int
-)
-
 func (p *Parser) Parse(ts []Token) {
 	p.tokenList = ts
 	p.currentPos = 0
