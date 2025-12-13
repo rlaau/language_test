@@ -27,7 +27,7 @@ func (p *Parser) Parse(ts []Token) {
 	case bool:
 		fmt.Printf("파싱 완료: 값= %v\n", boolOrInt)
 	default:
-		panic("논리 오류")
+		fmt.Printf("에러 값 %v\n", boolOrInt)
 	}
 	return
 }
