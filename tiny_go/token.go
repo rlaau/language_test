@@ -71,9 +71,6 @@ const (
 	MUL
 	DIV
 	POW
-
-	// 생성자
-	STRCONS
 )
 
 // NewToken은 토큰 생성
@@ -183,8 +180,6 @@ func StringSpec(t TokenKind) string {
 	case POW:
 		return "^"
 
-	case STRCONS:
-		return "\""
 	default:
 		panic("매치되는 토큰이 없습니다.")
 	}
@@ -215,7 +210,7 @@ func IsDelimeter(s string) (TokenKind, bool) {
 }
 
 func IsOperator(s string) (TokenKind, bool) {
-	for offset := range STRCONS - ASSIGN {
+	for offset := range POW + 1 - ASSIGN {
 		tokenKind := ASSIGN + offset
 		if s == StringSpec(tokenKind) {
 			return tokenKind, true

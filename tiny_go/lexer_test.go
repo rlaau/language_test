@@ -181,16 +181,26 @@ func TestLexer_Rollback_When_TwoChar_Not_Operator(t *testing.T) {
 	}
 }
 
-func TestLexer_StringConstructorQuote(t *testing.T) {
-	// 현재 lexer는 STRLIT 전체가 아니라, 따옴표 자체(STRCONS)만 토큰화하는 흐름으로 보임
-	toks := lexAll(t, "\"hello\"")
+func TestLexer_StringLiteral_STRLIT(t *testing.T) {
+	// Goal: strlit이 Satom -> strlit 로 정의되어 있으므로
+	// lexer가 "..." 전체를 STRLIT 하나로 토큰화하는지 확인한다.
+	//
+	// 이 테스트가 통과하려면 Lexer에 문자열 리터럴 읽기 로직이 있어야 함:
+	// - 시작 따옴표(")를 만나면
+	// - 다음 따옴표(")가 나올 때까지 내용을 읽고
+	// - STRLIT 토큰(값은 hello 같은 내부 내용 또는 "hello" 전체 중 설계에 맞는 것)으로 반환
 
-	// 기대: "  ID(hello)  "
-	// (hello를 STRLIT으로 만들려면 lexer에 문자열 리터럴 읽기 로직이 추가돼야 함)
+	toks := lexAll(t, "\"hello\" \"a b\" \"\"")
+
 	want := []expTok{
-		{STRCONS, "\""},
-		{ID, "hello"},
-		{STRCONS, "\""},
+		// value는 구현 정책에 따라 다를 수 있음:
+		// 1) 내부만 저장: hello / a b / ""
+		// 2) 따옴표 포함 저장: "hello" / "a b" / "\"\""
+		//
+		// 여기서는 "내부만 저장" 정책을 가정한다.
+		{STRLIT, "hello"},
+		{STRLIT, "a b"},
+		{STRLIT, ""},
 		{EOF, "EOF"},
 	}
 

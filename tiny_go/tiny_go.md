@@ -8,6 +8,10 @@ Decl -> "var" id Type [ "=" Expr] ";"| id ":=" Expr ";"
 Type -> "int" | "bool" | "string"
 Value -> id | number | strlit
 
+id = alpha{alpha|digit}
+number = digit+
+strlit = s = "..." 에 대해 trim(s, "\"") 
+
 Stmt -> SimpleStmt ";"
     |   Block
     |   If

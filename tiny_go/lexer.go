@@ -41,7 +41,7 @@ func (lx *Lexer) Next() Token {
 	}
 
 	//롤백 등록
-	rb := lx.rollback()
+	rollBack := lx.rollback()
 
 	// (1, 4, 5 번 케이스의 토큰)라면 -> 현재 읽은 문자가 알파벳이다.
 	// (현재 읽은 문자가 알파벳)라면-> (1,4,5번 케이스의 토큰)
@@ -86,23 +86,32 @@ func (lx *Lexer) Next() Token {
 			return NewToken(tokenKind, lx.currentPosition)
 		}
 		// 한 칸 이동 후 토크나이징 시도했지만 실패 시, 다시 원위치로 롤백
-		rb()
+		rollBack()
 	}
 	if tokenKind, isOperator := lx.readIf(string(lx.currentByte()), IsOperator); isOperator {
 		return NewToken(tokenKind, lx.currentPosition)
 	}
 
 	// 2케이스 검사
-	isStrCons := func(s string) (TokenKind, bool) {
-		if s == StringSpec(STRCONS) {
-			return STRCONS, true
+	isStrEdge := func(s string) (TokenKind, bool) {
+		if s == "\"" {
+			return STRLIT, true
 		}
 		return EOF, false
 	}
-	if tokenKind, isStrCons := lx.readIf(string(lx.currentByte()), isStrCons); isStrCons {
-		return NewToken(tokenKind, lx.currentPosition)
+	if _, isEdgeOfStrlit := lx.readIf(string(lx.currentByte()), isStrEdge); isEdgeOfStrlit {
+		isInnerOfStrlit := func(b byte) bool { _, isStr := isStrEdge(string(b)); return !isStr }
+		candidate := lx.readWhile(isInnerOfStrlit)
+		if _, isStrEdge2 := lx.readIf(string(lx.currentByte()), isStrEdge); isStrEdge2 {
+			strlitToken := NewToken(STRLIT, lx.currentPosition)
+			// STRLT은 따옴표 제거한 "내부 문자" 만 토큰 값으로 넣는다.
+			strlitToken.SetValue(string(candidate))
+			return strlitToken
+		}
+		rollBack()
 	}
 
+	rollBack()
 	//나머지 경우엔 올바른 토큰이 존재하지 않는다고 볼 수 있다.
 	fmt.Printf("lexer position %d, lexer current string %s \n", lx.currentPosition, string(lx.currentByte()))
 	panic("매칭되는 토큰이 존재하지 않음.")
