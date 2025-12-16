@@ -10,19 +10,23 @@ type Token struct {
 
 type TokenKind int
 
-// 값 블록
+// 키워드 블록
 const (
-	// 값 키워드
+	// 표현식 키워드
 	START_OF_KEYWORD TokenKind = iota
 	TRUE
 	FALSE
 	NUMBER
 	STRLIT
+	FUNC
 
 	// 타입 키워드
 	BOOL
 	INT
 	STRING
+
+	//return 키워드
+	RETURN
 
 	// if 키워드
 	IF
@@ -51,7 +55,6 @@ const (
 const (
 	START_OF_DELIMETER TokenKind = END_OF_ID + 1 + iota
 	// 구분자
-	EOF
 	LBRACE
 	RBRACE
 	LBRACKET
@@ -85,6 +88,12 @@ const (
 	DIV
 	END_OF_OPERATOR
 )
+const (
+	START_OF_SPECIAL TokenKind = END_OF_OPERATOR + 1 + iota
+	EOF
+	ILLLEGAL
+	END_OF_SPECIAL
+)
 
 // NewToken은 토큰 생성
 func NewToken(t TokenKind, pos int) Token {
@@ -106,6 +115,8 @@ func StringSpec(t TokenKind) string {
 		return ""
 	case STRLIT:
 		return ""
+	case FUNC:
+		return "func"
 
 	case BOOL:
 		return "bool"
@@ -114,9 +125,8 @@ func StringSpec(t TokenKind) string {
 	case STRING:
 		return "string"
 
-	case ID:
-		return ""
-
+	case RETURN:
+		return "return"
 	case IF:
 		return "if"
 	case THEN:
@@ -139,10 +149,9 @@ func StringSpec(t TokenKind) string {
 	case PRINT:
 		return "print"
 
-	case EOF:
-		//EOF는 "EOF"를 EOF로 토크나이징 하지는 않음.
-		// 입력값 끝 시 나타날 뿐임.
-		return "EOF"
+	case ID:
+		return ""
+
 	case LBRACE:
 		return "{"
 	case RBRACE:
@@ -191,6 +200,12 @@ func StringSpec(t TokenKind) string {
 	case DIV:
 		return "/"
 
+	case EOF:
+		//EOF는 "EOF"를 EOF로 토크나이징 하지는 않음.
+		// 입력값 끝 시 나타날 뿐임.
+		return "<<EOF>>"
+	case ILLLEGAL:
+		return "<<ILLEGAL>>"
 	default:
 		msg := fmt.Sprintf("StringSpec: 입력 %d에 대해 매치되는 토큰이 없습니다.", t)
 		panic(msg)
@@ -219,7 +234,7 @@ func isStringInRange(s string, start, end TokenKind) (TokenKind, bool) {
 			return tokenKind, true
 		}
 	}
-	return EOF, false
+	return ILLLEGAL, false
 }
 
 func (t *Token) String() string {

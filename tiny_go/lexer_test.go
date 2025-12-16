@@ -41,8 +41,8 @@ func lexAll(t *testing.T, input string) []Token {
 
 func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 	// EBNF에 필요한 키워드들(현재 TokenKind에 있는 것들만):
-	// bool/int/string, if/then/else, for/range, let/in, scan/print, true/false
-	toks := lexAll(t, "bool int string if then else for range let in scan print true false abc xyz123")
+	// bool/int/string, if/then/else, for/range, let/in, scan/print, true/false, func/return
+	toks := lexAll(t, "bool int string if then else for range let in scan print true false abc xyz123 func return")
 
 	want := []expTok{
 		{BOOL, "bool"},
@@ -61,7 +61,9 @@ func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 		{FALSE, "false"},
 		{ID, "abc"},
 		{ID, "xyz123"},
-		{EOF, "EOF"},
+		{FUNC, "func"},
+		{RETURN, "return"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -80,7 +82,7 @@ func TestLexer_Numbers(t *testing.T) {
 		{NUMBER, "7"},
 		{NUMBER, "42"},
 		{NUMBER, "12345"},
-		{EOF, "EOF"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -104,7 +106,7 @@ func TestLexer_Delimiters(t *testing.T) {
 		{RPAREN, ")"},
 		{SEMICOLON, ";"},
 		{COMMA, ","},
-		{EOF, "EOF"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -128,7 +130,7 @@ func TestLexer_Operators_OneChar(t *testing.T) {
 		{MINUS, "-"},
 		{MUL, "*"},
 		{DIV, "/"},
-		{EOF, "EOF"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -150,7 +152,7 @@ func TestLexer_Operators_TwoChar(t *testing.T) {
 		{GTE, ">="},
 		{AND, "&&"},
 		{OR, "||"},
-		{EOF, "EOF"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -169,7 +171,7 @@ func TestLexer_Rollback_When_TwoChar_Not_Operator(t *testing.T) {
 	want := []expTok{
 		{NOT, "!"},
 		{ID, "x"},
-		{EOF, "EOF"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -200,7 +202,7 @@ func TestLexer_StringLiteral_STRLIT(t *testing.T) {
 		{STRLIT, "hello"},
 		{STRLIT, "a b"},
 		{STRLIT, ""},
-		{EOF, "EOF"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -223,7 +225,7 @@ func TestLexer_Whitespace_Is_Ignored(t *testing.T) {
 		{NUMBER, "1"},
 		{SEMICOLON, ";"},
 		{RBRACE, "}"},
-		{EOF, "EOF"},
+		{EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {

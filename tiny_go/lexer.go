@@ -97,7 +97,7 @@ func (lx *Lexer) Next() Token {
 		if s == "\"" {
 			return STRLIT, true
 		}
-		return EOF, false
+		return ILLLEGAL, false
 	}
 	if _, isEdgeOfStrlit := lx.readIf(string(lx.currentByte()), isStrEdge); isEdgeOfStrlit {
 		isInnerOfStrlit := func(b byte) bool { _, isStr := isStrEdge(string(b)); return !isStr }
@@ -125,7 +125,7 @@ func (lx *Lexer) readIf(candidate string, isToken func(string) (TokenKind, bool)
 		lx.currentPosition += len(candidate)
 		return tokenKind, true
 	}
-	return EOF, false
+	return ILLLEGAL, false
 }
 
 // readWhile은 렉서가 현재 위치한 문자가 cond조건을 만족하는 한 계속 문자를 읽고, 다음 칸으로 간다.
