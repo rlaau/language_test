@@ -24,6 +24,10 @@ const (
 	BOOL
 	INT
 	STRING
+	UNIT
+
+	// 선언 키워드
+	VAR
 
 	//return 키워드
 	RETURN
@@ -67,9 +71,11 @@ const (
 )
 const (
 	START_OF_OPERATOR TokenKind = END_OF_DELIMETER + 1 + iota
-	// 연산자
+	// 연산자 및 선언 연산자
 	//대입
 	ASSIGN
+	// 짧은 선언 (선언 및 대입 연산)
+	SHORTDECL
 	//비교
 	EQUAL
 	NEQ
@@ -124,6 +130,11 @@ func StringSpec(t TokenKind) string {
 		return "int"
 	case STRING:
 		return "string"
+	case UNIT:
+		return "()"
+
+	case VAR:
+		return "var"
 
 	case RETURN:
 		return "return"
@@ -171,6 +182,8 @@ func StringSpec(t TokenKind) string {
 
 	case ASSIGN:
 		return "="
+	case SHORTDECL:
+		return ":="
 	case EQUAL:
 		return "=="
 	case NEQ:

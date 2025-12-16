@@ -3,37 +3,37 @@
 Program -> {Command}
 Command -> Decl | Stmt 
 
-Decl -> "var" id Type [ "=" Expr] ";"
+Decl -> "var" id DeclType [ "=" Expr] ";"
     |   id ":=" Expr ";" 
     |   FuncDecl
 
+DeclType -> "int" | "bool" | "string"  | "func" ArgTypes [ReturnTypes]
 FuncDecl -> "func" id Params [ReturnTypes] FuncBody
 FuncBody -> "{" FuncStmts "}"
 FuncStmts-> {FuncStmt}
 FuncStmt -> Stmt | "return" [Expr {"," Expr}] ";"
 
-Params -> "("")" | "(" Param { "," Param} ")"
+Params -> Unit | "(" Param { "," Param} ")"
 Param ->  id Type
 
-Type -> "int" 
-    |   "bool" 
-    |   "string"
-    |   "func" ArgTypes [ReturnTypes]
+Type -> PrimitiveType | "func" ArgTypes [ReturnTypes]
+PrimitiveType -> "int" | "bool" | "string" | Unit
+Unit -> "()"
 
-ArgTypes -> "(" ")" 
+ArgTypes -> Unit 
     |   "(" Type {"," Type} ")" 
     |   "(" Param, {"," Param} ")"
 
 ReturnTypes -> "(" Type {"," Type} ")" | Type
 
 
-Stmt -> SimpleStmt ";"
+Stmt -> SimpleStmt 
     |   Block
     |   If
     |   For
     |   Let
 
-SimpleStmt -> id "=" Expr | "scan" id | "print" Expr
+SimpleStmt -> id "=" Expr ";" | "scan" id ";" | "print" Expr ";" |  Call ";"
 
 Block -> "{" Stmts "}"
 If -> "if" Bexp "then" Block ["else" Block ]
@@ -50,7 +50,7 @@ Decls -> {Decl}
 
 Expr -> Fexp | Bexp | Aexp | Sexp
 
-Fexp -> -> "func" Params [RetrunTypes] FuncBody
+Fexp -> "func" Params [ReturnTypes] FuncBody
 
 Bexp -> Bterm { "||" Bterm } 
 Bterm -> Bfact   { "&&" Bfact   } 
@@ -77,7 +77,7 @@ Satom -> strlit | atom
 
 Atom -> id | Call
 Call ->  (id | Fexp | "("Expr")" ) Args {Args}
-Args ->  "("")"| "(" Expr {"," Expr} ")" 
+Args ->  Unit | "(" Expr {"," Expr} ")" 
 
 id = alpha{alpha|digit}
 number = digit+

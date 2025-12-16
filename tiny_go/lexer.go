@@ -32,7 +32,8 @@ func (lx *Lexer) Next() Token {
 	//5. 키워드의 문자열 값
 	//6. 구분자의 특수값
 	//7. 연산자의 특수값
-	//8. EOF
+	//8. 유닛 키워드의 값
+	//9. EOF
 	//으로 "구성"된다. (서로소는 아님으로 "분할"까진 아님.)
 
 	// 우선 EOF의 경우를 제거하자
@@ -62,6 +63,27 @@ func (lx *Lexer) Next() Token {
 		return idToken
 	}
 
+	//8 UNIT 키워드 파싱
+	isUnitStart := func(s string) (TokenKind, bool) {
+		if s == "(" {
+			return UNIT, true
+		}
+		return ILLLEGAL, false
+	}
+	isUnitEnd := func(s string) (TokenKind, bool) {
+		if s == ")" {
+			return UNIT, true
+		}
+		return ILLLEGAL, false
+	}
+	if _, isStartOfUnit := isUnitStart(string(lx.currentByte())); isStartOfUnit {
+		_, _ = lx.readIf(string(lx.currentByte()), isUnitStart)
+		if _, isEndOfUnit := lx.readIf(string(lx.currentByte()), isUnitEnd); isEndOfUnit {
+			return NewToken(UNIT, lx.currentPosition)
+		}
+		rollBack()
+	}
+
 	// 3번 케이스. number처리. 이 역시 필요충분 조건.
 	if isDigit(lx.currentByte()) {
 		candidate := lx.readWhile(isDigit)
@@ -71,12 +93,6 @@ func (lx *Lexer) Next() Token {
 	}
 
 	// 2,6,7 케이스
-	// 6의 구분자 집합과 2,7은 서로소 집합이므로, 문자열 길이가 1임에도 구분자 집합 먼저 검사
-	// 6의 구분자 집합에 대해, 모든 원소의 길이가 1임을 상정함.
-	if tokenKind, isDelimeter := lx.readIf(string(lx.currentByte()), IsDelimeter); isDelimeter {
-		return NewToken(tokenKind, lx.currentPosition)
-	}
-
 	// 7 케이스 검사
 	// 7의 연산자 집합에 대해, 모든 원소의 길이가 2 이하임을 상정함
 	// 길이 2부터 검사
@@ -92,6 +108,10 @@ func (lx *Lexer) Next() Token {
 		return NewToken(tokenKind, lx.currentPosition)
 	}
 
+	// 6의 구분자 집합에 대해, 모든 원소의 길이가 1임을 상정함.
+	if tokenKind, isDelimeter := lx.readIf(string(lx.currentByte()), IsDelimeter); isDelimeter {
+		return NewToken(tokenKind, lx.currentPosition)
+	}
 	// 2케이스 검사
 	isStrEdge := func(s string) (TokenKind, bool) {
 		if s == "\"" {
