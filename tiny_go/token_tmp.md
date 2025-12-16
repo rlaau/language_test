@@ -1,13 +1,12 @@
-### 언어에 표현으로써의 함수 추가 시 필요한 토큰들
+## 계획
+### 1. 언어 완비
+추가하려는 문법을 기존 문법에 완전히 통합시켜서 tmp유지하기
 
+### 2. 추가 토큰 계산하기
 Rerturn = "return"
 func = "func"
 
-### 함수에 대한 것
-1. 선언
-func id args returnType body => 이건 statement인가???
-id = func args returnType body => Expr
-
-2. 호출
-
-id args
+### 3. 렉서 사본 만들고 테스트하기
+렉서 사본이 성공해도 일단은 기존 레서 놔두기
+(언어 파싱 실패 가능성 염두)
+### 4. 파서 만들고 테스트하기

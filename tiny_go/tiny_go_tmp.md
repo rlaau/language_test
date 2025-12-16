@@ -1,39 +1,31 @@
-## 추가하려는 기능: 표현으로써의 함수
-### 문법
-Expr -> 기존 Expr | FuncExpr
-FuncExpr -> "func" Params [RetrunTypes] FuncBody
-
-Atom -> 기존 Atom | Call
-Call ->  (id | FuncExpr | "("Expr")" ) Args {Args}
-
-
-Decl -> 기존 Decl | FuncDecl
-FuncDecl -> "func" id Params [ReturnTypes] FuncBody
-
-FuncBody -> "{" FuncStmts "}"
-FuncStmts-> {FuncStmt}
-FuncStmt -> Stmt | "return" [Expr {"," Expr}] ";"
-
-Type -> 기존 Type | "func" ArgTypes [ReturnTypes]
-ArgTypes -> "(" [Type {"," Type}] ")" 
-ReturnTypes -> ArgTypes | Type
-
-Params -> "("")" | "(" Param { "," Param} ")"
-Param ->  id Type
-Args ->  "("")"| "(" Expr {"," Expr} ")" 
-
-## 기존 언어
+## 함수 표현식에 대해 확장된 언어
 ### EBNF
 Program -> {Command}
 Command -> Decl | Stmt 
 
-Decl -> "var" id Type [ "=" Expr] ";"| id ":=" Expr ";"
-Type -> "int" | "bool" | "string"
-Value -> id | number | strlit
+Decl -> "var" id Type [ "=" Expr] ";"
+    |   id ":=" Expr ";" 
+    |   FuncDecl
 
-id = alpha{alpha|digit}
-number = digit+
-strlit = "..." // 부연설명: s = "..." 에 대해 trim(s, "\"") 
+FuncDecl -> "func" id Params [ReturnTypes] FuncBody
+FuncBody -> "{" FuncStmts "}"
+FuncStmts-> {FuncStmt}
+FuncStmt -> Stmt | "return" [Expr {"," Expr}] ";"
+
+Params -> "("")" | "(" Param { "," Param} ")"
+Param ->  id Type
+
+Type -> "int" 
+    |   "bool" 
+    |   "string"
+    |   "func" ArgTypes [ReturnTypes]
+
+ArgTypes -> "(" ")" 
+    |   "(" Type {"," Type} ")" 
+    |   "(" Param, {"," Param} ")"
+
+ReturnTypes -> "(" Type {"," Type} ")" | Type
+
 
 Stmt -> SimpleStmt ";"
     |   Block
@@ -56,7 +48,9 @@ Decls -> {Decl}
 
 
 
-Expr -> Bexp | Aexp | Sexp
+Expr -> Fexp | Bexp | Aexp | Sexp
+
+Fexp -> -> "func" Params [RetrunTypes] FuncBody
 
 Bexp -> Bterm { "||" Bterm } 
 Bterm -> Bfact   { "&&" Bfact   } 
@@ -80,4 +74,11 @@ Aatom -> number | "(" Aexp ")" | atom
 Sexp -> Satom {"+" Satom}
 Satom -> strlit | atom
 
-Atom -> id
+
+Atom -> id | Call
+Call ->  (id | Fexp | "("Expr")" ) Args {Args}
+Args ->  "("")"| "(" Expr {"," Expr} ")" 
+
+id = alpha{alpha|digit}
+number = digit+
+strlit = "..." // 부연설명: s = "..." 에 대해 trim(s, "\"") 
