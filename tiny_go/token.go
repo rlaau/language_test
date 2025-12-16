@@ -1,5 +1,7 @@
 package tinygo
 
+import "fmt"
+
 type Token struct {
 	Kind  TokenKind
 	Value string
@@ -8,20 +10,19 @@ type Token struct {
 
 type TokenKind int
 
-// ! Append-only
+// 값 블록
 const (
-	//값
-	TRUE TokenKind = iota
+	// 값 키워드
+	START_OF_KEYWORD TokenKind = iota
+	TRUE
 	FALSE
 	NUMBER
 	STRLIT
 
-	// 타입
+	// 타입 키워드
 	BOOL
 	INT
 	STRING
-	//식별자
-	ID
 
 	// if 키워드
 	IF
@@ -39,7 +40,16 @@ const (
 	// 내장 함수 키워드
 	SCAN
 	PRINT
-
+	END_OF_KEYWORD
+)
+const (
+	//식별자
+	START_OF_ID TokenKind = END_OF_KEYWORD + 1 + iota
+	ID
+	END_OF_ID
+)
+const (
+	START_OF_DELIMETER TokenKind = END_OF_ID + 1 + iota
 	// 구분자
 	EOF
 	LBRACE
@@ -50,7 +60,10 @@ const (
 	RPAREN
 	SEMICOLON
 	COMMA
-
+	END_OF_DELIMETER
+)
+const (
+	START_OF_OPERATOR TokenKind = END_OF_DELIMETER + 1 + iota
 	// 연산자
 	//대입
 	ASSIGN
@@ -70,7 +83,7 @@ const (
 	MINUS
 	MUL
 	DIV
-	POW
+	END_OF_OPERATOR
 )
 
 // NewToken은 토큰 생성
@@ -177,47 +190,38 @@ func StringSpec(t TokenKind) string {
 		return "*"
 	case DIV:
 		return "/"
-	case POW:
-		return "^"
 
 	default:
-		panic("매치되는 토큰이 없습니다.")
+		msg := fmt.Sprintf("StringSpec: 입력 %d에 대해 매치되는 토큰이 없습니다.", t)
+		panic(msg)
 	}
 }
 
-// IsKeyword는 받은 문자열이 키워드인지 판단해서 맞다면 true, 아니면 false리탄힌디.
-// false 인 경우 빋은 문자열이 식별자(ID)인 것을 알 수 있다.
 func IsKeyWord(s string) (TokenKind, bool) {
-	// enum 정의 상에서, EOF이후의 수는 전부 구분자, 연산자임
-	// EOF 이후의 tokenKind는 키워드가 아니므로 더이상 비교하지 않음
-	// EOF는 키워드 취급이 아님. 입력값 끝을 나타내는 표식일 뿐임.
-	for tokenKind := range EOF {
-		if s == StringSpec(tokenKind) {
-			return tokenKind, true
-		}
-	}
-	return EOF, false
+	return isStringInRange(s, START_OF_KEYWORD, END_OF_KEYWORD)
 }
-
 func IsDelimeter(s string) (TokenKind, bool) {
-	for offset := range ASSIGN - LBRACE {
-		tokenKind := LBRACE + offset
-		if s == StringSpec(tokenKind) {
-			return tokenKind, true
-		}
-	}
-	return EOF, false
+	return isStringInRange(s, START_OF_DELIMETER, END_OF_DELIMETER)
 }
 
 func IsOperator(s string) (TokenKind, bool) {
-	for offset := range POW + 1 - ASSIGN {
-		tokenKind := ASSIGN + offset
+	return isStringInRange(s, START_OF_OPERATOR, END_OF_OPERATOR)
+}
+
+func isStringInRange(s string, start, end TokenKind) (TokenKind, bool) {
+	if start > end {
+		start, end = end, start
+	}
+	for offset := range end - start - 1 {
+		startPoint := start + 1
+		tokenKind := startPoint + offset
 		if s == StringSpec(tokenKind) {
 			return tokenKind, true
 		}
 	}
 	return EOF, false
 }
+
 func (t *Token) String() string {
 	return t.Value
 }

@@ -117,7 +117,7 @@ func TestLexer_Delimiters(t *testing.T) {
 
 func TestLexer_Operators_OneChar(t *testing.T) {
 	// 1글자 연산자: = < > ! + - * / ^
-	toks := lexAll(t, "= < > ! + - * / ^")
+	toks := lexAll(t, "= < > ! + - * /")
 
 	want := []expTok{
 		{ASSIGN, "="},
@@ -128,7 +128,6 @@ func TestLexer_Operators_OneChar(t *testing.T) {
 		{MINUS, "-"},
 		{MUL, "*"},
 		{DIV, "/"},
-		{POW, "^"},
 		{EOF, "EOF"},
 	}
 
