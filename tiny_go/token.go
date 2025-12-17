@@ -24,7 +24,7 @@ const (
 	BOOL
 	INT
 	STRING
-	UNIT
+	OMIT
 
 	// 선언 키워드
 	VAR
@@ -34,7 +34,6 @@ const (
 
 	// if 키워드
 	IF
-	THEN
 	ELSE
 
 	// for 키워드
@@ -130,7 +129,7 @@ func StringSpec(t TokenKind) string {
 		return "int"
 	case STRING:
 		return "string"
-	case UNIT:
+	case OMIT:
 		return "()"
 
 	case VAR:
@@ -140,8 +139,6 @@ func StringSpec(t TokenKind) string {
 		return "return"
 	case IF:
 		return "if"
-	case THEN:
-		return "then"
 	case ELSE:
 		return "else"
 

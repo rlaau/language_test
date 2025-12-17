@@ -63,23 +63,23 @@ func (lx *Lexer) Next() Token {
 		return idToken
 	}
 
-	//8 UNIT 키워드 파싱
-	isUnitStart := func(s string) (TokenKind, bool) {
+	//8 Omit 키워드 파싱
+	isOmitStart := func(s string) (TokenKind, bool) {
 		if s == "(" {
-			return UNIT, true
+			return OMIT, true
 		}
 		return ILLLEGAL, false
 	}
-	isUnitEnd := func(s string) (TokenKind, bool) {
+	isOmitEnd := func(s string) (TokenKind, bool) {
 		if s == ")" {
-			return UNIT, true
+			return OMIT, true
 		}
 		return ILLLEGAL, false
 	}
-	if _, isStartOfUnit := isUnitStart(string(lx.currentByte())); isStartOfUnit {
-		_, _ = lx.readIf(string(lx.currentByte()), isUnitStart)
-		if _, isEndOfUnit := lx.readIf(string(lx.currentByte()), isUnitEnd); isEndOfUnit {
-			return NewToken(UNIT, lx.currentPosition)
+	if _, isStartOfOmit := isOmitStart(string(lx.currentByte())); isStartOfOmit {
+		_, _ = lx.readIf(string(lx.currentByte()), isOmitStart)
+		if _, isEndOfOmit := lx.readIf(string(lx.currentByte()), isOmitEnd); isEndOfOmit {
+			return NewToken(OMIT, lx.currentPosition)
 		}
 		rollBack()
 	}

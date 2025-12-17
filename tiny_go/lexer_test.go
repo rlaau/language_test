@@ -41,8 +41,8 @@ func lexAll(t *testing.T, input string) []Token {
 
 func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 	// EBNF에 필요한 키워드들(현재 TokenKind에 있는 것들만):
-	// bool/int/string, if/then/else, for/range, let/in, scan/print, true/false, func/return
-	toks := lexAll(t, "var bool int string if then else for range let in scan print true false abc xyz123 func return ()")
+	// bool/int/string, if/else, for/range, let/in, scan/print, true/false, func/return
+	toks := lexAll(t, "var bool int string if else for range let in scan print true false abc xyz123 func return ()")
 
 	want := []expTok{
 		{VAR, "var"},
@@ -50,7 +50,6 @@ func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 		{INT, "int"},
 		{STRING, "string"},
 		{IF, "if"},
-		{THEN, "then"},
 		{ELSE, "else"},
 		{FOR, "for"},
 		{RANGE, "range"},
@@ -64,7 +63,7 @@ func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 		{ID, "xyz123"},
 		{FUNC, "func"},
 		{RETURN, "return"},
-		{UNIT, "()"},
+		{OMIT, "()"},
 		{EOF, "<<EOF>>"},
 	}
 
@@ -217,7 +216,7 @@ func TestLexer_StringLiteral_STRLIT(t *testing.T) {
 }
 
 func TestLexer_Whitespace_Is_Ignored(t *testing.T) {
-	toks := lexAll(t, " var x:=2 \n\t  if   true  then { print 1; }  ")
+	toks := lexAll(t, " var x:=2 \n\t  if   true   { print 1; }  ")
 
 	want := []expTok{
 		{VAR, "var"},
@@ -226,7 +225,6 @@ func TestLexer_Whitespace_Is_Ignored(t *testing.T) {
 		{NUMBER, "2"},
 		{IF, "if"},
 		{TRUE, "true"},
-		{THEN, "then"},
 		{LBRACE, "{"},
 		{PRINT, "print"},
 		{NUMBER, "1"},
