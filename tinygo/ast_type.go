@@ -1,12 +1,16 @@
 package tinygo
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/rlaaudgjs5638/langTest/tinygo/token"
+)
 
 type Node interface {
 	TokenLiteral() string
 	String() string
-	First() Token
-	Follow() []Token
+	First() token.Token
+	Follow() []token.Token
 }
 
 var s = "ss"

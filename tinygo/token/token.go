@@ -1,4 +1,4 @@
-package tinygo
+package token
 
 import "fmt"
 
@@ -51,6 +51,7 @@ const (
 	PRINT
 	PANIC
 	NEWERROR
+	ERRSTRING
 	END_OF_KEYWORD
 )
 const (
@@ -78,7 +79,7 @@ const (
 	//대입
 	ASSIGN
 	// 짧은 선언 (선언 및 대입 연산)
-	SHORTDECL
+	DECLSIGN
 	//비교
 	EQUAL
 	NEQ
@@ -168,6 +169,8 @@ func StringSpec(t TokenKind) string {
 		return "panic"
 	case NEWERROR:
 		return "newError"
+	case ERRSTRING:
+		return "errString"
 
 	case ID:
 		return ""
@@ -191,7 +194,7 @@ func StringSpec(t TokenKind) string {
 
 	case ASSIGN:
 		return "="
-	case SHORTDECL:
+	case DECLSIGN:
 		return ":="
 	case EQUAL:
 		return "=="

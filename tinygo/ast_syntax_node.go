@@ -1,12 +1,14 @@
 package tinygo
 
+import "github.com/rlaaudgjs5638/langTest/tinygo/token"
+
 type VarDecl struct {
-	Id        Token
+	Id        token.Token
 	DeclType  DeclType
 	ExprOrNil Expr
 }
 
 type ShortDecl struct {
-	Id   Token
+	Id   token.Token
 	Expr Expr
 }

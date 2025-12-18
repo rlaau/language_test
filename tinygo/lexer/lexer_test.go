@@ -2,16 +2,18 @@ package tinygo
 
 import (
 	"testing"
+
+	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
 //* 테스트코드는 AI가 작성함 *//
 
 type expTok struct {
-	kind  TokenKind
+	kind  token.TokenKind
 	value string // value 검증이 필요 없으면 ""로 둠
 }
 
-func assertTok(t *testing.T, got Token, want expTok) {
+func assertTok(t *testing.T, got token.Token, want expTok) {
 	t.Helper()
 	if got.Kind != want.kind {
 		t.Fatalf("kind mismatch: got=%v (%q) want=%v (%q) pos=%d",
@@ -23,16 +25,16 @@ func assertTok(t *testing.T, got Token, want expTok) {
 	}
 }
 
-func lexAll(t *testing.T, input string) []Token {
+func lexAll(t *testing.T, input string) []token.Token {
 	t.Helper()
 	lx := NewLexer()
 	lx.Set(input)
 
-	out := []Token{}
+	out := []token.Token{}
 	for {
 		tok := lx.Next()
 		out = append(out, tok)
-		if tok.Kind == EOF {
+		if tok.Kind == token.EOF {
 			break
 		}
 	}
@@ -45,26 +47,26 @@ func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 	toks := lexAll(t, "var bool int string if else for range let in scan print true false abc xyz123 func return ()")
 
 	want := []expTok{
-		{VAR, "var"},
-		{BOOL, "bool"},
-		{INT, "int"},
-		{STRING, "string"},
-		{IF, "if"},
-		{ELSE, "else"},
-		{FOR, "for"},
-		{RANGE, "range"},
-		{LET, "let"},
-		{IN, "in"},
-		{SCAN, "scan"},
-		{PRINT, "print"},
-		{TRUE, "true"},
-		{FALSE, "false"},
-		{ID, "abc"},
-		{ID, "xyz123"},
-		{FUNC, "func"},
-		{RETURN, "return"},
-		{OMIT, "()"},
-		{EOF, "<<EOF>>"},
+		{token.VAR, "var"},
+		{token.BOOL, "bool"},
+		{token.INT, "int"},
+		{token.STRING, "string"},
+		{token.IF, "if"},
+		{token.ELSE, "else"},
+		{token.FOR, "for"},
+		{token.RANGE, "range"},
+		{token.LET, "let"},
+		{token.IN, "in"},
+		{token.SCAN, "scan"},
+		{token.PRINT, "print"},
+		{token.TRUE, "true"},
+		{token.FALSE, "false"},
+		{token.ID, "abc"},
+		{token.ID, "xyz123"},
+		{token.FUNC, "func"},
+		{token.RETURN, "return"},
+		{token.OMIT, "()"},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -79,11 +81,11 @@ func TestLexer_Numbers(t *testing.T) {
 	toks := lexAll(t, "0 7 42 12345")
 
 	want := []expTok{
-		{NUMBER, "0"},
-		{NUMBER, "7"},
-		{NUMBER, "42"},
-		{NUMBER, "12345"},
-		{EOF, "<<EOF>>"},
+		{token.NUMBER, "0"},
+		{token.NUMBER, "7"},
+		{token.NUMBER, "42"},
+		{token.NUMBER, "12345"},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -99,15 +101,15 @@ func TestLexer_Delimiters(t *testing.T) {
 	toks := lexAll(t, "{ } [ ] ( ) ; ,")
 
 	want := []expTok{
-		{LBRACE, "{"},
-		{RBRACE, "}"},
-		{LBRACKET, "["},
-		{RBRACKET, "]"},
-		{LPAREN, "("},
-		{RPAREN, ")"},
-		{SEMICOLON, ";"},
-		{COMMA, ","},
-		{EOF, "<<EOF>>"},
+		{token.LBRACE, "{"},
+		{token.RBRACE, "}"},
+		{token.LBRACKET, "["},
+		{token.RBRACKET, "]"},
+		{token.LPAREN, "("},
+		{token.RPAREN, ")"},
+		{token.SEMICOLON, ";"},
+		{token.COMMA, ","},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -123,15 +125,15 @@ func TestLexer_Operators_OneChar(t *testing.T) {
 	toks := lexAll(t, "= < > ! + - * /")
 
 	want := []expTok{
-		{ASSIGN, "="},
-		{LT, "<"},
-		{GT, ">"},
-		{NOT, "!"},
-		{PLUS, "+"},
-		{MINUS, "-"},
-		{MUL, "*"},
-		{DIV, "/"},
-		{EOF, "<<EOF>>"},
+		{token.ASSIGN, "="},
+		{token.LT, "<"},
+		{token.GT, ">"},
+		{token.NOT, "!"},
+		{token.PLUS, "+"},
+		{token.MINUS, "-"},
+		{token.MUL, "*"},
+		{token.DIV, "/"},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -147,14 +149,14 @@ func TestLexer_Operators_TwoChar(t *testing.T) {
 	toks := lexAll(t, "== != <= >= && || :=")
 
 	want := []expTok{
-		{EQUAL, "=="},
-		{NEQ, "!="},
-		{LTE, "<="},
-		{GTE, ">="},
-		{AND, "&&"},
-		{OR, "||"},
-		{SHORTDECL, ":="},
-		{EOF, "<<EOF>>"},
+		{token.EQUAL, "=="},
+		{token.NEQ, "!="},
+		{token.LTE, "<="},
+		{token.GTE, ">="},
+		{token.AND, "&&"},
+		{token.OR, "||"},
+		{token.DECLSIGN, ":="},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -171,9 +173,9 @@ func TestLexer_Rollback_When_TwoChar_Not_Operator(t *testing.T) {
 	toks := lexAll(t, "!x")
 
 	want := []expTok{
-		{NOT, "!"},
-		{ID, "x"},
-		{EOF, "<<EOF>>"},
+		{token.NOT, "!"},
+		{token.ID, "x"},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -201,10 +203,10 @@ func TestLexer_StringLiteral_STRLIT(t *testing.T) {
 		// 2) 따옴표 포함 저장: "hello" / "a b" / "\"\""
 		//
 		// 여기서는 "내부만 저장" 정책을 가정한다.
-		{STRLIT, "hello"},
-		{STRLIT, "a b"},
-		{STRLIT, ""},
-		{EOF, "<<EOF>>"},
+		{token.STRLIT, "hello"},
+		{token.STRLIT, "a b"},
+		{token.STRLIT, ""},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
@@ -216,25 +218,30 @@ func TestLexer_StringLiteral_STRLIT(t *testing.T) {
 }
 
 func TestLexer_Whitespace_Is_Ignored(t *testing.T) {
-	toks := lexAll(t, " var my_x_2_1 error = newError(\"err\") \n\t  if   true   { print 1; }  ")
+	toks := lexAll(t, " var my_x_ error = newError(\"err\") \n\t  if   true   { print errString(my_x_); }  ")
 
 	want := []expTok{
-		{VAR, "var"},
-		{ID, "my_x_2_1"},
-		{ERROR, "error"},
-		{ASSIGN, "="},
-		{NEWERROR, "newError"},
-		{LPAREN, "("},
-		{STRLIT, "err"},
-		{RPAREN, ")"},
-		{IF, "if"},
-		{TRUE, "true"},
-		{LBRACE, "{"},
-		{PRINT, "print"},
-		{NUMBER, "1"},
-		{SEMICOLON, ";"},
-		{RBRACE, "}"},
-		{EOF, "<<EOF>>"},
+		{token.VAR, "var"},
+		{token.ID, "my_x_"},
+		{token.ERROR, "error"},
+		{token.ASSIGN, "="},
+		{token.NEWERROR, "newError"},
+		{token.LPAREN, "("},
+		{token.STRLIT, "err"},
+		{token.RPAREN, ")"},
+		{token.IF, "if"},
+		{token.TRUE, "true"},
+		{token.LBRACE, "{"},
+		{token.PRINT, "print"},
+
+		{token.ERRSTRING, "errString"},
+		{token.LPAREN, "("},
+		{token.ID, "my_x_"},
+		{token.RPAREN, ")"},
+
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.EOF, "<<EOF>>"},
 	}
 
 	if len(toks) != len(want) {
