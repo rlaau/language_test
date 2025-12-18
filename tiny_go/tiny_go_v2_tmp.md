@@ -10,11 +10,12 @@
 
 ### EBNF
 
-Module -> {Decl}
+Package -> {Decl}
 
 
-Decl -> VarDecl | FuncDecl
-VarDecl ->  "var" id {"," id} Type [ "=" Expr {"," Expr }] ";"
+Decl -> VarDecl | FuncDecl 
+VarDecl ->  "var" id {"," id} Type [ "=" Expr {"," Expr }] End
+End -> ";"
 FuncDecl -> "func" id Params [ReturnTypes] Block
 
 
@@ -23,7 +24,7 @@ Omit -> "()"
 Param ->  id Type
 
 Type -> PrimitiveType | "func" ArgTypes [ReturnTypes]
-PrimitiveType -> "int" | "bool" | "string" 
+PrimitiveType -> "int" | "bool" | "string" | "error"
 
 ArgTypes -> Omit 
     |   "(" Type {"," Type} ")" 
@@ -40,19 +41,20 @@ Stmt -> SimpleStmt
     |   For
     |   Block
 
-SimpleStmt -> Assign | "scan" id ";" | "print" Expr ";" |  Call ";"
-ShortDecl-> id {"," id } ":=" Expr {"," Expr } ";"
-Assign -> id {"," id} "=" Expr {"," Expr} ";"
+SimpleStmt -> Assign | Call End  
+ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
+Assign -> id {"," id} "=" Expr {"," Expr} End
 If -> "if" [ShortDecl] Bexp Block ["else" Block ]
 For ->  "for" Bexp Block
-    |   "for" ShortDecl Bexp ";" id "=" Expr ";" Block 
+    |   "for" ShortDecl Bexp End id "=" Expr End Block 
     |   "for" "range" Aexp Block
-Return -> "return" [Expr {"," Expr}] ";"
+Return -> "return" [Expr {"," Expr}] End
 Block -> "{" {Stmt} "}"
 
 
 
-Expr -> Fexp | Lexp  
+Expr -> Fexp | Lexp 
+
 
 Fexp -> "func" Params [ReturnTypes] Block
 
@@ -66,17 +68,17 @@ Term -> Factor { ("*" | "/") Factor }
 
 Factor -> ["-"] ("(" Aexp ")" | Atom )
 
-Atom -> id | Call | ValueForm
-Call ->  (id | Fexp | "("Expr")" ) Args {Args}
+Atom -> id | Call | ValueForm 
+Call ->  BuiltIn Args | (id | Fexp | "("Expr")" ) Args {Args}
+// Built-in Function = newError(string) error , scan(id), print(Expr), panic (Lexp)
+BuiltIn -> "newError" | "scan" | "print" | "panic" 
 Args ->  Omit | "(" Expr {"," Expr} ")" 
 
 ValueForm -> Literal | Fexp
-Literal := number | Bool | strlit
+Literal := number | Bool | strlit | "nil"
 Bool -> "true" | "false"
 
-
-
-id = alpha{alpha|digit}
+id = alpha{alpha| digit | "_"}
 number = digit+
 strlit = "..." // 부연설명: s = "..." 에 대해 trim(s, "\"") 
 

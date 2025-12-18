@@ -22,48 +22,54 @@ func (lx *Lexer) Set(s string) {
 func (lx *Lexer) Next() Token {
 	// 공백을 제거하면 문자와 맞닿게 된다.
 	lx.skipWhitespace()
+
 	// "문자"는 토크나이징 되거나, 토크나이징 되지 못한다.
 	// 이떄 올바른 토큰이 존재한다 가정하면
 	// 렉서가 파싱할 모든 토큰은
-	//1. true, false
-	//2. strlit의 '"' 값
-	//3. number의 숫자 값
-	//4. id의 문자열{문자열|숫자} 값
-	//5. 키워드의 문자열 값
-	//6. 구분자의 특수값
-	//7. 연산자의 특수값
-	//8. 유닛 키워드의 값
-	//9. EOF
+	//1. number, strlit, omit을 제외한 키워드
+	//2. id
+	//3. omit
+	//4. number
+	//5. strlit
+	//6. operator
+	//7. delimeter
+	//8. special (EOF, ILLEGAL)
+
 	//으로 "구성"된다. (서로소는 아님으로 "분할"까진 아님.)
 
 	// 우선 EOF의 경우를 제거하자
+	// ILLEGAL은 토크나이징 실패 케이스로써 처리하자
 	if lx.isOvered() {
 		return NewToken(EOF, lx.currentPosition)
 	}
 
+	// 그럼 이제 1,2,3,4,5,6,7 번의 경우만이 남는다.
+
 	//롤백 등록
 	rollBack := lx.rollback()
 
-	// (1, 4, 5 번 케이스의 토큰)라면 -> 현재 읽은 문자가 알파벳이다.
-	// (현재 읽은 문자가 알파벳)라면-> (1,4,5번 케이스의 토큰)
-	// 그러므로 (1, 4, 5 번 케이스의 토큰) <-> (현재 읽은 문자가 알파벳)
+	// (1, 2 번 케이스의 토큰)라면 -> 현재 읽은 문자가 알파벳이다.
+	// (현재 읽은 문자가 알파벳)라면-> (1,2번 케이스의 토큰)
+	// 그러므로 (1, 2 번 케이스의 토큰)  ==  (현재 읽은 문자가 알파벳) 이다.
+	// 참고: Union(1, 2번 케이스) = number, strlit아닌 키워드와 id이다
 	if isAlpha(lx.currentByte()) {
-
 		// 문자{문자|숫자} 전부 수집 후 다음 칸 이동
 		candidate := lx.readWhile(isDigitOrAlpha)
 
 		keyWord, isKeyWordExist := IsKeyWord(string(candidate))
-		// 키워드인 경우 <-> 1,5번
+		// 키워드인 경우 <-> 1번 케이스
 		if isKeyWordExist {
 			return NewToken(keyWord, lx.currentPosition)
 		}
-		// 식별자인 경우
+		// 식별자인 경우 <-> 2번 케이스
 		idToken := NewToken(ID, lx.currentPosition)
 		idToken.SetValue(string(candidate))
 		return idToken
 	}
-
-	//8 Omit 키워드 파싱
+	// 이제 3,4,5,6,7 케이스가 남는다.
+	// 3번 케이스인 Omit 키워드 파싱한다
+	// Omit은 연산자를 제외한 모든 토큰과 서로소이며, 연산자보다 길이가 길다.
+	// 그러므로 이 시점에서 유일-타당하게 토크나이징 될 수 있다.
 	isOmitStart := func(s string) (TokenKind, bool) {
 		if s == "(" {
 			return OMIT, true
@@ -84,7 +90,9 @@ func (lx *Lexer) Next() Token {
 		rollBack()
 	}
 
-	// 3번 케이스. number처리. 이 역시 필요충분 조건.
+	// 이제 4,5,6,7 케이스가 남는다.
+	// 4번 케이스. number처리.
+	// 이 역시 필요충분 조건이며, 5,6,7 케이스와 서로소이다.
 	if isDigit(lx.currentByte()) {
 		candidate := lx.readWhile(isDigit)
 		numberToken := NewToken(NUMBER, lx.currentPosition)
@@ -92,27 +100,10 @@ func (lx *Lexer) Next() Token {
 		return numberToken
 	}
 
-	// 2,6,7 케이스
-	// 7 케이스 검사
-	// 7의 연산자 집합에 대해, 모든 원소의 길이가 2 이하임을 상정함
-	// 길이 2부터 검사
-	if lx.isNextExist() {
-		candidate := lx.input[lx.currentPosition : lx.currentPosition+2]
-		if tokenKind, isOperator := lx.readIf(candidate, IsOperator); isOperator {
-			return NewToken(tokenKind, lx.currentPosition)
-		}
-		// 한 칸 이동 후 토크나이징 시도했지만 실패 시, 다시 원위치로 롤백
-		rollBack()
-	}
-	if tokenKind, isOperator := lx.readIf(string(lx.currentByte()), IsOperator); isOperator {
-		return NewToken(tokenKind, lx.currentPosition)
-	}
-
-	// 6의 구분자 집합에 대해, 모든 원소의 길이가 1임을 상정함.
-	if tokenKind, isDelimeter := lx.readIf(string(lx.currentByte()), IsDelimeter); isDelimeter {
-		return NewToken(tokenKind, lx.currentPosition)
-	}
-	// 2케이스 검사
+	// 이제 5,6,7 케이스가 남는다.
+	// 5 케이스 검사
+	// strlit은 "\"" 으로 시작하고, 이는 6,7 케이스의 첫 문자와 서로소이다.
+	// 그러므로 첫 문자만 보고 유일한 케이스로 좁힐 수 있다.
 	isStrEdge := func(s string) (TokenKind, bool) {
 		if s == "\"" {
 			return STRLIT, true
@@ -130,9 +121,32 @@ func (lx *Lexer) Next() Token {
 		}
 		rollBack()
 	}
+	// 이제 6,7 케이스가 남는다.
+	// 6 케이스 검사
+	// 6의 연산자 집합에 대해, 모든 원소의 길이가 2 이하임을 상정한다
+	// 6,7 케이스 역시 서로소이므로 순서에 의존하지 않지만, 길이가 더 긴 6케이스를 우선 검사한다.
+	// 길이 2부터 검사
+	if lx.isNextExist() {
+		candidate := lx.input[lx.currentPosition : lx.currentPosition+2]
+		if tokenKind, isOperator := lx.readIf(candidate, IsOperator); isOperator {
+			return NewToken(tokenKind, lx.currentPosition)
+		}
+		// 한 칸 이동 후 토크나이징 시도했지만 실패 시, 다시 원위치로 롤백
+		rollBack()
+	}
+	if tokenKind, isOperator := lx.readIf(string(lx.currentByte()), IsOperator); isOperator {
+		return NewToken(tokenKind, lx.currentPosition)
+	}
 
-	rollBack()
+	// 이제 7케이스만이 남는다.
+	// 7의 구분자 집합에 대해, 모든 원소의 길이가 1임을 상정한다.
+	if tokenKind, isDelimeter := lx.readIf(string(lx.currentByte()), IsDelimeter); isDelimeter {
+		return NewToken(tokenKind, lx.currentPosition)
+	}
+
+	// 이제 어느 케이스도 남지 않는다.
 	//나머지 경우엔 올바른 토큰이 존재하지 않는다고 볼 수 있다.
+	rollBack()
 	fmt.Printf("lexer position %d, lexer current string %s \n", lx.currentPosition, string(lx.currentByte()))
 	panic("매칭되는 토큰이 존재하지 않음.")
 }

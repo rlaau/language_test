@@ -18,12 +18,14 @@ const (
 	FALSE
 	NUMBER
 	STRLIT
+	NIL
 	FUNC
 
 	// 타입 키워드
 	BOOL
 	INT
 	STRING
+	ERROR
 	OMIT
 
 	// 선언 키워드
@@ -47,6 +49,8 @@ const (
 	// 내장 함수 키워드
 	SCAN
 	PRINT
+	PANIC
+	NEWERROR
 	END_OF_KEYWORD
 )
 const (
@@ -120,6 +124,8 @@ func StringSpec(t TokenKind) string {
 		return ""
 	case STRLIT:
 		return ""
+	case NIL:
+		return "nil"
 	case FUNC:
 		return "func"
 
@@ -129,6 +135,8 @@ func StringSpec(t TokenKind) string {
 		return "int"
 	case STRING:
 		return "string"
+	case ERROR:
+		return "error"
 	case OMIT:
 		return "()"
 
@@ -156,6 +164,10 @@ func StringSpec(t TokenKind) string {
 		return "scan"
 	case PRINT:
 		return "print"
+	case PANIC:
+		return "panic"
+	case NEWERROR:
+		return "newError"
 
 	case ID:
 		return ""

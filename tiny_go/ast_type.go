@@ -1,5 +1,7 @@
 package tinygo
 
+import "errors"
+
 type Node interface {
 	TokenLiteral() string
 	String() string
@@ -7,6 +9,8 @@ type Node interface {
 	Follow() []Token
 }
 
+var s = "ss"
+var e error = errors.New(s)
 
 type Cmd interface {
 	Node

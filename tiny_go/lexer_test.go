@@ -216,13 +216,17 @@ func TestLexer_StringLiteral_STRLIT(t *testing.T) {
 }
 
 func TestLexer_Whitespace_Is_Ignored(t *testing.T) {
-	toks := lexAll(t, " var x:=2 \n\t  if   true   { print 1; }  ")
+	toks := lexAll(t, " var my_x_2_1 error = newError(\"err\") \n\t  if   true   { print 1; }  ")
 
 	want := []expTok{
 		{VAR, "var"},
-		{ID, "x"},
-		{SHORTDECL, ":="},
-		{NUMBER, "2"},
+		{ID, "my_x_2_1"},
+		{ERROR, "error"},
+		{ASSIGN, "="},
+		{NEWERROR, "newError"},
+		{LPAREN, "("},
+		{STRLIT, "err"},
+		{RPAREN, ")"},
 		{IF, "if"},
 		{TRUE, "true"},
 		{LBRACE, "{"},
