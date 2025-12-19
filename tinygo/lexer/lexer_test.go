@@ -1,4 +1,4 @@
-package tinygo
+package lexer
 
 import (
 	"testing"
@@ -44,7 +44,7 @@ func lexAll(t *testing.T, input string) []token.Token {
 func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 	// EBNF에 필요한 키워드들(현재 TokenKind에 있는 것들만):
 	// bool/int/string, if/else, for/range, let/in, scan/print, true/false, func/return
-	toks := lexAll(t, "var bool int string if else for range let in scan print true false abc xyz123 func return ()")
+	toks := lexAll(t, "var bool int string if else for range let in scan print true false abc xyz123 func return len()")
 
 	want := []expTok{
 		{token.VAR, "var"},
@@ -65,6 +65,7 @@ func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 		{token.ID, "xyz123"},
 		{token.FUNC, "func"},
 		{token.RETURN, "return"},
+		{token.LEN, "len"},
 		{token.OMIT, "()"},
 		{token.EOF, "<<EOF>>"},
 	}

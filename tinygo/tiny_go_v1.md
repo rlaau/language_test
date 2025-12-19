@@ -11,7 +11,7 @@ func main(){
         print(errString(err))
         panic(err)
     }
-    print(b)
+    print("4 나누기 2는" + intToString(divided))
 
 }
 
@@ -21,6 +21,32 @@ func divide(a int, b int) (int, error) {
     }
     return a/b, nil
 }
+
+func intToString(i int) string {
+    if i == 0 {
+        return digitToString(0)
+    }
+
+    lastDigit := i- 10*(i/10)
+    reduced := i/10
+    return intToString(reduced)+digitToString(lastDigit) 
+}
+
+func digitToString(i int) string {
+    if i > 9 || i < 0 {
+        panic("err")
+    }
+    if i == 0 {
+        return "0"
+    }
+    //...반복은 생략...//
+
+    if i == 9 {
+        return "9"
+    }
+    return "0"
+}
+
 ```
 
 ### 타입과 값
@@ -69,11 +95,12 @@ Built-in Type과 값 <br>
 ### 표준 환경
 Built in function <br>
 ```go
-    func newError(s string) error
-    func errString(e error) string
-    func scan(id)
-    func print(Expr)
-    func panic(Lexp)
+    func newError(s string) error   // string 표현을 strlit으로 변환 후 error value로 리턴
+    func errString(e error) string  // error의 strlit value를 string으로 리턴
+    func len(s string) int
+    func scan(id)       // id에 stdin의 값을 문자열로 받음
+    func print(Expr)    // stdout에 string 타입의 Expr 출력
+    func panic(Lexp)    // 프로그램 전체에 panic 전파
 ```
 Predefine Operator <br>
 - +, -, *, /
@@ -81,7 +108,7 @@ Predefine Operator <br>
 - == , != , <, <=, >, >=
 - &&, ||, !
 
-### 구문법 (EBNF로 기술함)
+### 구문법 (EBNF)
 ```ocaml
 Package -> {Decl}
 
@@ -102,7 +129,8 @@ ArgTypes -> Omit
 ReturnTypes -> "(" Type {"," Type} ")" | Type
 
 
-Stmt -> SimpleStmt
+Stmt -> Assgin
+    |   Call End
     |   ShortDecl
     |   VarDecl
     |   FuncDecl
@@ -110,14 +138,13 @@ Stmt -> SimpleStmt
     |   If
     |   For
     |   Block
-SimpleStmt -> Assign | Call End  
-ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
 Assign -> id {"," id} "=" Expr {"," Expr} End
+ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
+Return -> "return" [Expr {"," Expr}] End
 If -> "if" [ShortDecl] Bexp Block ["else" Block ]
 For ->  "for" Bexp Block
     |   "for" ShortDecl Bexp End id "=" Expr End Block 
     |   "for" "range" Aexp Block
-Return -> "return" [Expr {"," Expr}] End
 Block -> "{" {Stmt} "}"
 
 
@@ -135,7 +162,7 @@ Factor -> ["-"] ("(" Aexp ")" | Atom )
 
 Atom -> id | Call | ValueForm 
 Call ->  BuiltIn Args | (id | Fexp | "("Expr")" ) Args {Args}
-BuiltIn -> "newError" | "errString" | "scan" | "print" | "panic" 
+BuiltIn -> "newError" | "errString" | "scan" | "print" | "panic" | "len"
 Args ->  Omit | "(" Expr {"," Expr} ")" 
 
 ValueForm -> Literal | Fexp

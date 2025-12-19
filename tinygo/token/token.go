@@ -52,6 +52,7 @@ const (
 	PANIC
 	NEWERROR
 	ERRSTRING
+	LEN
 	END_OF_KEYWORD
 )
 const (
@@ -171,6 +172,8 @@ func StringSpec(t TokenKind) string {
 		return "newError"
 	case ERRSTRING:
 		return "errString"
+	case LEN:
+		return "len"
 
 	case ID:
 		return ""

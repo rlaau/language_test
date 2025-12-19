@@ -1,4 +1,4 @@
-package tinygo
+package lexer
 
 import (
 	"fmt"
