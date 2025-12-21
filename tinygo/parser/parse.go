@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"fmt"
-
 	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
@@ -34,13 +32,13 @@ func (p *Parser) parseFexp() (*Fexp, error) { panic("") }
 
 func (p *Parser) parseLexp() (Lexp, error) {
 	if p.CheckProcessable() {
-		return nil, ErrNotProcesable
+		return nil, NewParseError("Lexp", ErrNotProcesable)
 	}
 
 	if err := p.match(token.NOT); err == nil {
 		lexp, err := p.parseLexp()
 		if err != nil {
-			return nil, fmt.Errorf("parseLexp failed: (%w)", err)
+			return nil, NewParseError("Lexp", err)
 		}
 		return &Unary{
 			Op:     Not,
@@ -50,7 +48,7 @@ func (p *Parser) parseLexp() (Lexp, error) {
 
 	firstBexp, err := p.parseBexp()
 	if err != nil {
-		return nil, fmt.Errorf("parseLexp: (%w)", err)
+		return nil, NewParseError("Lexp", err)
 	}
 
 	var bigBinary *Binary
@@ -60,7 +58,7 @@ func (p *Parser) parseLexp() (Lexp, error) {
 	buildBiggerBinary := func(op BinaryKind) error {
 		newBexp, err := p.parseBexp()
 		if err != nil {
-			return err
+			return NewParseError("Lexp", err)
 		}
 		bigBinary.LeftExpr = nextLeftBinary
 		bigBinary.Op = op
@@ -74,14 +72,14 @@ func (p *Parser) parseLexp() (Lexp, error) {
 		andErr := p.match(token.AND)
 		if andErr == nil {
 			if err := buildBiggerBinary(And); err != nil {
-				return nil, err
+				return nil, NewParseError("Lexp", err)
 			}
 			continue
 		}
 		orErr := p.match(token.OR)
 		if orErr == nil {
 			if err := buildBiggerBinary(Or); err != nil {
-				return nil, err
+				return nil, NewParseError("Lexp", err)
 			}
 			continue
 		}
