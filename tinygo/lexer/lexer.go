@@ -20,6 +20,7 @@ func (lx *Lexer) Set(s string) {
 	lx.input = s
 }
 
+
 // Next는 현재 위치에서의 토큰을 리턴한 후, 다음 위치로 렉서의 포지션을 옮긴다.
 func (lx *Lexer) Next() token.Token {
 	// 공백을 제거하면 "문자"와 맞닿게 된다.

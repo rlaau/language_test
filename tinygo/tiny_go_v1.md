@@ -7,7 +7,7 @@
 func main(){
     a, b := 4, 2
     divided, err := divide(a,b);
-    if err != nil {
+    if err != ok {
         print(errString(err))
         panic(err)
     }
@@ -19,7 +19,7 @@ func divide(a int, b int) (int, error) {
     if b == 0 {
         return 0, newError("can't divide by zero");
     }
-    return a/b, nil
+    return a/b, ok
 }
 
 func intToString(i int) string {
@@ -83,7 +83,7 @@ Built-in Type과 값 <br>
 - 패키지 레벨에서 호이스팅 존재, 로컬 블록에선 호이스팅 없음.
 
 ### 에러 모델
-- 에러를 표현으로 취급함
+- 에러를 표현, 타입으로 취급함
 - newError를 통해 에러 표현 생성 가능
 - errString을 통해 에러의 문자열 값 가져오기 가능
 
@@ -151,14 +151,14 @@ Block -> "{" {Stmt} "}"
 Expr -> Fexp | Lexp 
 
 Fexp -> "func" Params [ReturnTypes] Block
-Lexp -> Bexp { ("&&" | "||") Bexp} | "!" Bexp
+Lexp -> Bexp { ("&&" | "||") Bexp} 
 
-Bexp -> Aexp [Relop Aexp]
+Bexp -> Aexp [Relop Aexp] | "!" Bexp 
 
 Relop -> "==" | "!=" | "<" | "<=" | ">" | ">=" 
 Aexp -> Term { ("+" | "-") Term } 
 Term -> Factor { ("*" | "/") Factor } 
-Factor -> ["-"] ("(" Aexp ")" | Atom )
+Factor -> ["-"]  ("(" Lexp ")" | Atom )
 
 Atom -> id | Call | ValueForm 
 Call ->  BuiltIn Args | (id | Fexp | "("Expr")" ) Args {Args}
@@ -166,7 +166,7 @@ BuiltIn -> "newError" | "errString" | "scan" | "print" | "panic" | "len"
 Args ->  Omit | "(" Expr {"," Expr} ")" 
 
 ValueForm -> Literal | Fexp
-Literal := number | Bool | strlit | "nil"
+Literal := number | Bool | strlit | "ok"
 Bool -> "true" | "false"
 
 id = alpha{alpha| digit | "_"}

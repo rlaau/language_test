@@ -18,7 +18,7 @@ const (
 	FALSE
 	NUMBER
 	STRLIT
-	NIL
+	OK
 	FUNC
 
 	// 타입 키워드
@@ -126,8 +126,8 @@ func StringSpec(t TokenKind) string {
 		return ""
 	case STRLIT:
 		return ""
-	case NIL:
-		return "nil"
+	case OK:
+		return "ok"
 	case FUNC:
 		return "func"
 

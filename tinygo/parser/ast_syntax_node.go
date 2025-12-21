@@ -89,7 +89,6 @@ func (f *FuncDecl) Print(depth int) []string {
 	lines := []string{}
 	lines = append(lines, LineWithDepth(start, depth))
 	lines = append(lines, LineWithDepth("ID:"+f.Id.String(), depth+1))
-	lines = append(lines, LineWithDepth("=", depth+1))
 	paramStart := "Type: ["
 	params := JoinWithSepG(f.ParamsOrNil, ",")
 	paramEnd := "]"
@@ -443,9 +442,12 @@ var _ Stmt = (*Block)(nil)
 func (b *Block) Print(depth int) []string {
 	lines := []string{}
 	lines = append(lines, LineWithDepth("Block(", depth))
-	for _, stmt := range b.StmtsOrNil {
+	for i, stmt := range b.StmtsOrNil {
+		del := fmt.Sprintf("--- stmt %d ", i+1)
+		lines = append(lines, LineWithDepth(del, depth+1))
 		lines = append(lines, stmt.Print(depth+1)...)
 	}
+	lines = append(lines, LineWithDepth("--- block end", depth+1))
 	lines = append(lines, LineWithDepth(")", depth))
 	return lines
 }

@@ -44,9 +44,10 @@ func lexAll(t *testing.T, input string) []token.Token {
 func TestLexer_Keywords_And_Identifiers(t *testing.T) {
 	// EBNF에 필요한 키워드들(현재 TokenKind에 있는 것들만):
 	// bool/int/string, if/else, for/range, let/in, scan/print, true/false, func/return
-	toks := lexAll(t, "var bool int string if else for range let in scan print true false abc xyz123 func return len()")
+	toks := lexAll(t, "ok var bool int string if else for range let in scan print true false abc xyz123 func return len()")
 
 	want := []expTok{
+		{token.OK, "ok"},
 		{token.VAR, "var"},
 		{token.BOOL, "bool"},
 		{token.INT, "int"},
