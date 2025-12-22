@@ -3,6 +3,8 @@ package parser
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
 // Node
@@ -500,12 +502,19 @@ type Unary struct {
 	Object Expr
 }
 
+func newUnary(op UnaryKind, expr Expr) *Unary {
+	return &Unary{
+		Op:     op,
+		Object: expr,
+	}
+}
+
 var _ Lexp = (*Unary)(nil)
 
 func (u *Unary) Print(depth int) []string {
 	var op string
 	switch u.Op {
-	case FlipSign:
+	case MinusUnary:
 		op = "-"
 	case Not:
 		op = "!"
@@ -534,8 +543,8 @@ func (u *Unary) Lexp() string {
 type UnaryKind int
 
 const (
-	FlipSign UnaryKind = iota
-	Not
+	MinusUnary UnaryKind = UnaryKind(token.MINUS)
+	Not      UnaryKind = UnaryKind(token.NOT)
 )
 
 // Lexp
@@ -545,6 +554,14 @@ type Binary struct {
 	RightExpr Expr
 }
 
+func newBinary(op BinaryKind, left, right Expr) *Binary {
+	return &Binary{
+		Op:        op,
+		LeftExpr:  left,
+		RightExpr: right,
+	}
+}
+
 var _ Lexp = (*Binary)(nil)
 
 func (b *Binary) Print(depth int) []string {
@@ -552,7 +569,7 @@ func (b *Binary) Print(depth int) []string {
 	switch b.Op {
 	case Plus:
 		op = "+"
-	case Minus:
+	case MinusBinary:
 		op = "-"
 	case Mul:
 		op = "*"
@@ -562,11 +579,11 @@ func (b *Binary) Print(depth int) []string {
 		op = "=="
 	case NotEqual:
 		op = "!="
-	case Greater:
+	case GreaterThan:
 		op = "<"
 	case GreaterOrEqual:
 		op = "<="
-	case Less:
+	case LessThan:
 		op = "<"
 	case LessOrEqual:
 		op = "<="
@@ -596,8 +613,8 @@ func (b *Binary) Lexp() string {
 
 // Lexp
 type Atom struct {
-	AtomKind AtomKind
-
+	AtomKind   AtomKind
+	ExprOrNil  Expr
 	IdOrNil    *Id
 	CallOrNil  *Call
 	ValueOrNil *ValueForm
@@ -610,6 +627,10 @@ func (a *Atom) Print(depth int) []string {
 	atomStart := "Atom("
 	lines = append(lines, LineWithDepth(atomStart, depth))
 	switch a.AtomKind {
+	case ExprAtom:
+		lines = append(lines, a.ExprOrNil.Print(depth+1)...)
+		lines = append(lines, LineWithDepth(")", depth))
+		return lines
 	case IdAtom:
 		idStr := "id " + a.IdOrNil.String()
 		lines = append(lines, LineWithDepth(idStr, depth+1))
@@ -642,18 +663,19 @@ func (a *Atom) Lexp() string {
 type AtomKind int
 
 const (
-	IdAtom AtomKind = iota
+	ExprAtom AtomKind = iota
+	IdAtom
 	CallAtom
 	ValueAtom
 )
 
 type ValueForm struct {
-	ValueKind ValueKind
+	ValueKind ValueType
 
 	NumberOrNil *int
 	BoolOrNil   *bool
 	StrLitOrNil *string
-	NilOrNil    *string
+	ErrOrNil    *string
 	FexpOrNil   *Fexp
 }
 
@@ -670,8 +692,14 @@ func (v *ValueForm) Print(depth int) []string {
 		}
 	case StrLitValue:
 		return ss("strlit: " + *v.StrLitOrNil)
-	case NilValue:
-		return ss("error: Nil")
+	case ErrValue:
+		var errString string
+		if v.ErrOrNil == nil {
+			errString = "<OK>" //* ok값의 error는 nil포인터로 값을 담는다.
+		} else {
+			errString = *v.ErrOrNil
+		}
+		return ss("error: " + errString)
 	case FexpValue:
 		lines := []string{}
 		lines = append(lines, LineWithDepth("valueForm<", depth))
@@ -688,34 +716,34 @@ func (v *ValueForm) String() string {
 	return JoinLines(v.Print(0))
 }
 
-type ValueKind int
+type ValueType int
 
 const (
-	NumberValue ValueKind = iota
+	NumberValue ValueType = iota
 	BoolValue
 	StrLitValue
-	NilValue
+	ErrValue
 	FexpValue
 )
 
 type BinaryKind int
 
 const (
-	Plus BinaryKind = iota
-	Minus
-	Mul
-	Div
+	Plus  BinaryKind = BinaryKind(token.PLUS)
+	MinusBinary            = BinaryKind(token.MINUS)
+	Mul              = BinaryKind(token.MUL)
+	Div              = BinaryKind(token.DIV)
 
-	Equal
-	NotEqual
+	Equal    = BinaryKind(token.EQUAL)
+	NotEqual = BinaryKind(token.NEQ)
 
-	Greater
-	GreaterOrEqual
-	Less
-	LessOrEqual
+	GreaterThan        = BinaryKind(token.GT)
+	GreaterOrEqual = BinaryKind(token.GTE)
+	LessThan           = BinaryKind(token.LT)
+	LessOrEqual    = BinaryKind(token.LTE)
 
-	And
-	Or
+	And = BinaryKind(token.AND)
+	Or  = BinaryKind(token.OR)
 )
 
 type Call struct {

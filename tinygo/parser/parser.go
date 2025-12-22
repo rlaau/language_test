@@ -48,10 +48,10 @@ func (pe *ParseError) String() string {
 	return pe.Error()
 }
 
-func NewParseError(errorOccued string, err error) *ParseError {
+func NewParseError(errorOccued string, becauseOf error) *ParseError {
 	return &ParseError{
 		headMsg:   fmt.Sprintf("parse%s", errorOccued),
-		tailError: err,
+		tailError: becauseOf,
 	}
 }
 func formatParsingErr(errOccuredHere string, becauseOfThat error) error {

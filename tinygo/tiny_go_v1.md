@@ -129,7 +129,7 @@ ArgTypes -> Omit
 ReturnTypes -> "(" Type {"," Type} ")" | Type
 
 
-Stmt -> Assgin
+Stmt -> Assign
     |   Call End
     |   ShortDecl
     |   VarDecl
@@ -151,16 +151,16 @@ Block -> "{" {Stmt} "}"
 Expr -> Fexp | Lexp 
 
 Fexp -> "func" Params [ReturnTypes] Block
-Lexp -> Bexp { ("&&" | "||") Bexp} 
-
-Bexp -> Aexp [Relop Aexp] | "!" Bexp 
+Lexp -> Bexp { "||" Bexp} 
+Bexp -> Bterm {"&&" Bterm }
+Bterm -> Aexp [Relop Aexp] | "!" Bterm 
 
 Relop -> "==" | "!=" | "<" | "<=" | ">" | ">=" 
 Aexp -> Term { ("+" | "-") Term } 
 Term -> Factor { ("*" | "/") Factor } 
-Factor -> ["-"]  ("(" Lexp ")" | Atom )
+Factor -> ["-"]  Atom
 
-Atom -> id | Call | ValueForm 
+Atom -> "(" Expr ")" | id | Call | ValueForm 
 Call ->  BuiltIn Args | (id | Fexp | "("Expr")" ) Args {Args}
 BuiltIn -> "newError" | "errString" | "scan" | "print" | "panic" | "len"
 Args ->  Omit | "(" Expr {"," Expr} ")" 
@@ -175,3 +175,61 @@ strlit = "..." // 부연설명: s = "..." 에 대해 trim(s, "\"")
 ```
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```ocaml
+Expr ->  Bexp { "||" Bexp} 
+Bexp -> Bterm {"&&" Bterm }
+Bterm -> Aexp [Relop Aexp] | "!" Bterm 
+
+Relop -> "==" | "!=" | "<" | "<=" | ">" | ">=" 
+Aexp -> Term { ("+" | "-") Term } 
+Term -> Factor { ("*" | "/") Factor } 
+Factor -> ["-"]  Atom
+
+Atom -> Primary {Args}
+
+Primary -> "(" Expr ")" | id | BuiltIn |  ValueForm
+
+BuiltIn -> "newError" | "errString" | "scan" | "print" | "panic" | "len"
+
+ValueForm -> Literal | Fexp
+Literal := number | Bool | strlit | "ok"
+Bool -> "true" | "false"
+Fexp -> "func" Params [ReturnTypes] Block
+
+Args ->  Omit | "(" Expr {"," Expr} ")" 
+
+id = alpha{alpha| digit | "_"}
+number = digit+
+strlit = "..." // 부연설명: s = "..." 에 대해 trim(s, "\"") 
+```

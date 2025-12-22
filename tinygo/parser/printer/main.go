@@ -169,8 +169,8 @@ func testComplexFuncWithIf() {
 								&parser.Atom{
 									AtomKind: parser.ValueAtom,
 									ValueOrNil: &parser.ValueForm{
-										ValueKind: parser.NilValue,
-										NilOrNil:  &nilStr,
+										ValueKind: parser.ErrValue,
+										ErrOrNil:  &nilStr,
 									},
 								},
 							},
@@ -191,8 +191,8 @@ func testForLoop() {
 	pkg := &parser.Package{
 		DeclsOrNil: []parser.Decl{
 			&parser.FuncDecl{
-				Id:          "testLoop",
-				ParamsOrNil: []parser.Param{},
+				Id:               "testLoop",
+				ParamsOrNil:      []parser.Param{},
 				ReturnTypesOrNil: []parser.Type{},
 				Block: parser.Block{
 					StmtsOrNil: []parser.Stmt{
@@ -298,8 +298,8 @@ func testCompletePackage() {
 								RightExpr: &parser.Atom{
 									AtomKind: parser.ValueAtom,
 									ValueOrNil: &parser.ValueForm{
-										ValueKind: parser.NilValue,
-										NilOrNil:  &nilStr,
+										ValueKind: parser.ErrValue,
+										ErrOrNil:  &nilStr,
 									},
 								},
 							},
@@ -400,8 +400,8 @@ func testCompletePackage() {
 								&parser.Atom{
 									AtomKind: parser.ValueAtom,
 									ValueOrNil: &parser.ValueForm{
-										ValueKind: parser.NilValue,
-										NilOrNil:  &nilStr,
+										ValueKind: parser.ErrValue,
+										ErrOrNil:  &nilStr,
 									},
 								},
 							},

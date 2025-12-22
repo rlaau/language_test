@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"errors"
+
 	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
@@ -31,71 +33,205 @@ func (p *Parser) parseFexp() (*Fexp, error) { panic("") }
 // Begin: Binary, Unary에 의한 추상 구문법으로 압축
 
 func (p *Parser) parseLexp() (Lexp, error) {
-	if p.CheckProcessable() {
+	if !p.CheckProcessable() {
 		return nil, NewParseError("Lexp", ErrNotProcesable)
 	}
 
-	if err := p.match(token.NOT); err == nil {
-		lexp, err := p.parseLexp()
-		if err != nil {
-			return nil, NewParseError("Lexp", err)
-		}
-		return &Unary{
-			Op:     Not,
-			Object: lexp,
-		}, nil
-	}
-
-	firstBexp, err := p.parseBexp()
+	lexp, err := p.parseBexp()
 	if err != nil {
 		return nil, NewParseError("Lexp", err)
 	}
 
-	var bigBinary *Binary
-	bigBinary.LeftExpr = nil
-	bigBinary.RightExpr = nil
-	nextLeftBinary := firstBexp
-	buildBiggerBinary := func(op BinaryKind) error {
-		newBexp, err := p.parseBexp()
-		if err != nil {
-			return NewParseError("Lexp", err)
-		}
-		bigBinary.LeftExpr = nextLeftBinary
-		bigBinary.Op = op
-		bigBinary.RightExpr = newBexp
-
-		nextLeftBinary = bigBinary
-		return nil
-	}
-
 	for {
-		andErr := p.match(token.AND)
-		if andErr == nil {
-			if err := buildBiggerBinary(And); err != nil {
+		if p.match(token.OR) == nil {
+			right, err := p.parseBexp()
+			if err != nil {
 				return nil, NewParseError("Lexp", err)
 			}
-			continue
-		}
-		orErr := p.match(token.OR)
-		if orErr == nil {
-			if err := buildBiggerBinary(Or); err != nil {
-				return nil, NewParseError("Lexp", err)
-			}
+			lexp = newBinary(Or, lexp, right)
 			continue
 		}
 		break
 	}
-	if bigBinary.RightExpr == nil {
-		return firstBexp, nil
-	}
-	return bigBinary, nil
+	return lexp, nil
 
 }
-func (p *Parser) parseBexp() (Lexp, error)   { panic("") }
-func (p *Parser) parseAexp() (Lexp, error)   { panic("") }
-func (p *Parser) parseTerm() (Lexp, error)   { panic("") }
-func (p *Parser) parseFactor() (Lexp, error) { panic("") }
-func (p *Parser) parseAtom() (*Atom, error)  { panic("") }
+func (p *Parser) parseBexp() (Lexp, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Bexp", ErrNotProcesable)
+	}
+
+	bexp, err := p.parseBterm()
+	if err != nil {
+		return nil, NewParseError("Bexp", err)
+	}
+
+	for {
+		if p.match(token.AND) == nil {
+			bterm, err := p.parseBterm()
+			if err != nil {
+				return nil, NewParseError("Bexp", err)
+			}
+			bexp = newBinary(And, bexp, bterm)
+			continue
+		}
+		break
+	}
+
+	return bexp, nil
+
+}
+
+func (p *Parser) parseBterm() (Lexp, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Bterm", ErrNotProcesable)
+	}
+	if p.match(token.NOT) == nil {
+		bterm, err := p.parseBterm()
+		if err != nil {
+			return nil, NewParseError("Bexp", err)
+		}
+		return newUnary(Not, bterm), nil
+	}
+
+	aexp, err := p.parseAexp()
+	if err != nil {
+		return nil, NewParseError("Bexp", err)
+	}
+
+	matchRelop := func() (BinaryKind, error) {
+		switch p.tape.CurrentToken().Kind {
+		case token.EQUAL:
+			return Equal, nil
+		case token.NEQ:
+			return NotEqual, nil
+		case token.GT:
+			return GreaterThan, nil
+		case token.GTE:
+			return GreaterOrEqual, nil
+		case token.LT:
+			return LessThan, nil
+		case token.LTE:
+			return LessOrEqual, nil
+		default:
+			return Equal, errors.New("isMatchRelop: RelOp 미스매치")
+		}
+	}
+
+	if relop, err := matchRelop(); err == nil {
+		secondAexp, err := p.parseAexp()
+		if err != nil {
+			return nil, NewParseError("Bterm", err)
+		}
+		return newBinary(relop, aexp, secondAexp), nil
+	}
+	return aexp, nil
+}
+
+func (p *Parser) parseAexp() (Lexp, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Aexp", ErrNotProcesable)
+	}
+	binary, err := p.parseTerm()
+	if err != nil {
+		return nil, NewParseError("Aexp", err)
+	}
+
+	for {
+		if p.match(token.PLUS) == nil {
+			term, err := p.parseTerm()
+			if err != nil {
+				return nil, NewParseError("Bexp", err)
+			}
+			binary = newBinary(Plus, binary, term)
+			continue
+		}
+		if p.match(token.MINUS) == nil {
+			term, err := p.parseTerm()
+			if err != nil {
+				return nil, NewParseError("Bexp", nil)
+			}
+			binary = newBinary(MinusBinary, binary, term)
+			continue
+		}
+		break
+	}
+	return binary, nil
+}
+func (p *Parser) parseTerm() (Lexp, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Term", ErrNotProcesable)
+	}
+
+	binary, err := p.parseFactor()
+	if err != nil {
+		return nil, NewParseError("Term", err)
+	}
+	for {
+		if p.match(token.MUL) == nil {
+			factor, err := p.parseFactor()
+			if err != nil {
+				return nil, NewParseError("Term", err)
+			}
+			binary = newBinary(Mul, binary, factor)
+			continue
+		}
+		if p.match(token.DIV) == nil {
+			factor, err := p.parseFactor()
+			if err != nil {
+				return nil, NewParseError("Term", err)
+			}
+			binary = newBinary(Div, binary, factor)
+			continue
+		}
+		break
+	}
+
+	return binary, nil
+}
+func (p *Parser) parseFactor() (Lexp, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Factor", ErrNotProcesable)
+	}
+	isMinus := false
+	if p.match(token.MINUS) == nil {
+		isMinus = true
+	}
+
+	atom, err := p.parseAtom()
+	if err != nil {
+		return nil, NewParseError("Factor", err)
+	}
+
+	if isMinus {
+		return newUnary(MinusUnary, atom), nil
+	}
+	return atom, nil
+}
+
+func (p *Parser) parseAtom() (Lexp, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Atom", ErrNotProcesable)
+	}
+
+	//1, "("+Expr+")" case: 이 경우 first가 Call의 "("+Expr+")"+Args와 겹칩
+	if p.match(token.LPAREN) == nil {
+		_, err := p.parseExpr()
+		if err != nil {
+			return nil, NewParseError("Atom", err)
+		}
+		err = p.match(token.RPAREN)
+		if err != nil {
+			return nil, NewParseError("Atom", err)
+		}
+		//Expr 이후 Args가 존재하지 않는 경우를 먼저 체크
+		peeked := p.tape.Peek(1)
+		if !(peeked.Kind == token.OMIT) && !(peeked.Kind == token.LPAREN) {
+			return nil, nil
+		}
+	}
+	panic("잠시 대기")
+}
 
 // End
 func (p *Parser) parseCall() (*Call, error)           { panic("") }
