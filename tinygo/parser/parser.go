@@ -12,12 +12,14 @@ type Parser struct {
 	tape *TokenTape
 }
 
-// ! EOF 토큰은 추후 고려
 func NewParser(l *lexer.Lexer) *Parser {
-	tokenManager := NewTokenManager(l)
+	tokenTape := NewTokenTape(l)
 	return &Parser{
-		tape: tokenManager,
+		tape: tokenTape,
 	}
+}
+func (p *Parser) CurrentToken() token.Token {
+	return p.tape.CurrentToken()
 }
 
 func (p *Parser) match(t token.TokenKind) error {

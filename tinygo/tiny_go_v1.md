@@ -94,6 +94,9 @@ Built-in Type과 값 <br>
 
 ### 표준 환경
 Built in function <br>
+- 모든 빌트인 함수는 사용 시 반드시 호출되어야 하며
+- 호출 시 결과값으로 다른 함수를 리턴하지 않음. (연쇄 호출 불가)
+- 구문법 상으롣, 빌트인 함수는 바로 앞 하나의 괄호에 묶인 인자 리스트만을 가져감.
 ```go
     func newError(s string) error   // string 표현을 strlit으로 변환 후 error value로 리턴
     func errString(e error) string  // error의 strlit value를 string으로 리턴
@@ -121,13 +124,14 @@ Params -> Omit | "(" Param { "," Param} ")"
 Omit -> "()"
 Param ->  id Type
 
-Type -> PrimitiveType | "func" ArgTypes [ReturnTypes]
+Type -> PrimitiveType | FuncType
+FuncType ->  "func" ArgTypes [ReturnTypes]
 PrimitiveType -> "int" | "bool" | "string" | "error"
 ArgTypes -> Omit 
     |   "(" Type {"," Type} ")" 
 
-ReturnTypes -> "(" Type {"," Type} ")" | Type
-
+ReturnTypes ->  Type
+| "(" Type {"," Type} ")" 
 
 Stmt -> Assign
     |   Call End
@@ -164,8 +168,7 @@ Primary -> "(" Expr ")" | id  |  ValueForm
 BuiltInCall -> ("newError" | "errString" | "scan" | "print" | "panic" | "len") Args
 
 ValueForm -> Literal | Fexp
-Literal := number | Bool | strlit | "ok"
-Bool -> "true" | "false"
+Literal := number | "true" | "false" | strlit | "ok"
 Fexp -> "func" Params [ReturnTypes] Block
 
 Args ->  Omit | "(" Expr {"," Expr} ")" 

@@ -240,6 +240,7 @@ func StringSpec(t TokenKind) string {
 	}
 }
 
+
 func IsKeyWord(s string) (TokenKind, bool) {
 	return isStringInRange(s, START_OF_KEYWORD, END_OF_KEYWORD)
 }

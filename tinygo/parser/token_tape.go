@@ -12,8 +12,8 @@ type TokenTape struct {
 	currentIdx  int
 }
 
-// NewTokenManager는 렉서에서 첫 토큰을 받으면서 초기화됨
-func NewTokenManager(l *lexer.Lexer) *TokenTape {
+// NewTokenTape는 렉서에서 첫 토큰을 받으면서 초기화됨
+func NewTokenTape(l *lexer.Lexer) *TokenTape {
 	initToken := l.Next()
 	return &TokenTape{
 		lexer:       l,

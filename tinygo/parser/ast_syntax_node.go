@@ -125,12 +125,23 @@ type Param struct {
 	Type Type
 }
 
+func newParam(id Id, t Type) *Param {
+	return &Param{
+		Id:   id,
+		Type: t,
+	}
+}
 func (p Param) String() string {
 	return "<" + p.Id.String() + "," + p.Type.String() + ">"
 }
 
 type Id string
 
+func newId(token token.Token) *Id {
+	value := string(token.Value)
+	id := Id(value)
+	return &id
+}
 func (i Id) String() string {
 	return string(i)
 }
@@ -140,6 +151,12 @@ type Type struct {
 	FuncTypeOrNil *FuncType
 }
 
+func newType(kind TypeKind, funcTypeOrNil *FuncType) *Type {
+	return &Type{
+		TypeKind:      kind,
+		FuncTypeOrNil: funcTypeOrNil,
+	}
+}
 func (t Type) String() string {
 	switch t.TypeKind {
 	case IntType:
@@ -172,6 +189,12 @@ type FuncType struct {
 	ReturnTypesOrNil []Type
 }
 
+func newFuncType(argsTypes []Type, returnTypes []Type) *FuncType {
+	return &FuncType{
+		ArgTypesOrNil:    argsTypes,
+		ReturnTypesOrNil: returnTypes,
+	}
+}
 func (ft FuncType) String() string {
 	start := "funcType"
 	argStart := "["
@@ -578,6 +601,15 @@ type Primary struct {
 	ValueOrNil *ValueForm
 }
 
+func newPrimary(primaryKind PrimaryKind, exprOrNil Expr, idOrNil *Id, valueOrNil *ValueForm) *Primary {
+	return &Primary{
+		PrimaryKind: primaryKind,
+		ExprOrNil:   exprOrNil,
+		IdOrNil:     idOrNil,
+		ValueOrNil:  valueOrNil,
+	}
+}
+
 var _ Atom = (*Primary)(nil)
 
 func (p *Primary) Print(depth int) []string {
@@ -626,13 +658,23 @@ const (
 type ValueForm struct {
 	ValueKind ValueType
 
-	NumberOrNil *int
-	BoolOrNil   *bool
-	StrLitOrNil *string
-	ErrOrNil    *string
-	FexpOrNil   *Fexp
+	NumberOrNil  *int
+	BoolOrNil    *bool
+	StrLitOrNil  *string
+	ErrOrOkOrNil *string
+	FexpOrNil    *Fexp
 }
 
+func newValueForm(valueKind ValueType, numberOrNil *int, boolOrNil *bool, strLitOrNil *string, errOrOkOrNil *string, fexoOrNil *Fexp) *ValueForm {
+	return &ValueForm{
+		ValueKind:    valueKind,
+		NumberOrNil:  numberOrNil,
+		BoolOrNil:    boolOrNil,
+		StrLitOrNil:  strLitOrNil,
+		ErrOrOkOrNil: errOrOkOrNil,
+		FexpOrNil:    fexoOrNil,
+	}
+}
 func (v *ValueForm) Print(depth int) []string {
 	ss := func(s string) []string { return []string{LineWithDepth("valueForm<"+s+">", depth)} }
 	switch v.ValueKind {
@@ -648,10 +690,10 @@ func (v *ValueForm) Print(depth int) []string {
 		return ss("strlit: " + *v.StrLitOrNil)
 	case ErrValue:
 		var errString string
-		if v.ErrOrNil == nil {
+		if v.ErrOrOkOrNil == nil {
 			errString = "<OK>" //* ok값의 error는 nil포인터로 값을 담는다.
 		} else {
-			errString = *v.ErrOrNil
+			errString = *v.ErrOrOkOrNil
 		}
 		return ss("error: " + errString)
 	case FexpValue:
@@ -709,6 +751,14 @@ type Call struct {
 
 var _ Atom = (*Call)(nil)
 
+func newCall(isBuiltIn bool, primaryOrNil *Primary, builtInKindOrNil BuiltInKind, args []Args) *Call {
+	return &Call{
+		IsBuilinCall:     isBuiltIn,
+		PrimaryOrNil:     primaryOrNil,
+		BuiltInKindOrNil: builtInKindOrNil,
+		ArgsList:         args,
+	}
+}
 func (c *Call) Print(depth int) []string {
 	lines := []string{}
 	callStart := "call<"
@@ -723,7 +773,7 @@ func (c *Call) Print(depth int) []string {
 			ce = toList(LineWithDepth("id: errString", depth+1))
 		case ScanBuild:
 			ce = toList(LineWithDepth("id: scan", depth+1))
-		case PrintKBuild:
+		case PrintBuild:
 			ce = toList(LineWithDepth("id: print", depth+1))
 		case PanicBuild:
 			ce = toList(LineWithDepth("id: panic", depth+1))
@@ -767,6 +817,11 @@ func (c *Call) Atom() string {
 
 type Args []Expr
 
+func newArgs(exprs []Expr) *Args {
+	a := Args(exprs)
+	return &a
+}
+
 func (a Args) Print(depth int) []string {
 	lines := []string{}
 	lines = append(lines, LineWithDepth("args<", depth))
@@ -798,7 +853,7 @@ const (
 	NewErrorBuild BuiltInKind = iota
 	ErrStringBuild
 	ScanBuild
-	PrintKBuild
+	PrintBuild
 	PanicBuild
 	LenBuild
 )
@@ -809,6 +864,13 @@ type Fexp struct {
 	Block            Block
 }
 
+func newFexp(paramOrNil []Param, returnOrNil []Type, body Block) *Fexp {
+	return &Fexp{
+		ParamsOrNil:      paramOrNil,
+		ReturnTypesOrNil: returnOrNil,
+		Block:            body,
+	}
+}
 func (f *Fexp) Print(depth int) []string {
 	lines := []string{}
 	lines = append(lines, LineWithDepth("Fexp(", depth))

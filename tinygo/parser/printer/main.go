@@ -166,8 +166,8 @@ func testComplexFuncWithIf() {
 								&parser.Primary{
 									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
-										ValueKind: parser.ErrValue,
-										ErrOrNil:  &nilStr,
+										ValueKind:    parser.ErrValue,
+										ErrOrOkOrNil: &nilStr,
 									},
 								},
 							},
@@ -206,7 +206,7 @@ func testForLoop() {
 									&parser.CallStmt{
 										Call: parser.Call{
 											IsBuilinCall:     true,
-											BuiltInKindOrNil: parser.PrintKBuild,
+											BuiltInKindOrNil: parser.PrintBuild,
 											ArgsList: []parser.Args{
 												{
 													&parser.Primary{
@@ -295,8 +295,8 @@ func testCompletePackage() {
 								RightExpr: &parser.Primary{
 									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
-										ValueKind: parser.ErrValue,
-										ErrOrNil:  &nilStr,
+										ValueKind:    parser.ErrValue,
+										ErrOrOkOrNil: &nilStr,
 									},
 								},
 							},
@@ -394,8 +394,8 @@ func testCompletePackage() {
 								&parser.Primary{
 									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
-										ValueKind: parser.ErrValue,
-										ErrOrNil:  &nilStr,
+										ValueKind:    parser.ErrValue,
+										ErrOrOkOrNil: &nilStr,
 									},
 								},
 							},
