@@ -20,7 +20,7 @@ type Expr interface {
 	Expr() string
 }
 
-type Lexp interface {
+type Atom interface {
 	Expr
-	Lexp() string //ring으로 감싸기
+	Atom() string
 }

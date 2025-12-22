@@ -139,6 +139,7 @@ Stmt -> Assign
     |   For
     |   Block
 Assign -> id {"," id} "=" Expr {"," Expr} End
+Call -> Primary Args {Args} | BuiltInCall
 ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
 Return -> "return" [Expr {"," Expr}] End
 If -> "if" [ShortDecl] Bexp Block ["else" Block ]
@@ -148,65 +149,6 @@ For ->  "for" Bexp Block
 Block -> "{" {Stmt} "}"
 
 
-Expr -> Fexp | Lexp 
-
-Fexp -> "func" Params [ReturnTypes] Block
-Lexp -> Bexp { "||" Bexp} 
-Bexp -> Bterm {"&&" Bterm }
-Bterm -> Aexp [Relop Aexp] | "!" Bterm 
-
-Relop -> "==" | "!=" | "<" | "<=" | ">" | ">=" 
-Aexp -> Term { ("+" | "-") Term } 
-Term -> Factor { ("*" | "/") Factor } 
-Factor -> ["-"]  Atom
-
-Atom -> "(" Expr ")" | id | Call | ValueForm 
-Call ->  BuiltIn Args | (id | Fexp | "("Expr")" ) Args {Args}
-BuiltIn -> "newError" | "errString" | "scan" | "print" | "panic" | "len"
-Args ->  Omit | "(" Expr {"," Expr} ")" 
-
-ValueForm -> Literal | Fexp
-Literal := number | Bool | strlit | "ok"
-Bool -> "true" | "false"
-
-id = alpha{alpha| digit | "_"}
-number = digit+
-strlit = "..." // 부연설명: s = "..." 에 대해 trim(s, "\"") 
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```ocaml
 Expr ->  Bexp { "||" Bexp} 
 Bexp -> Bterm {"&&" Bterm }
 Bterm -> Aexp [Relop Aexp] | "!" Bterm 
@@ -216,11 +158,10 @@ Aexp -> Term { ("+" | "-") Term }
 Term -> Factor { ("*" | "/") Factor } 
 Factor -> ["-"]  Atom
 
-Atom -> Primary {Args}
+Atom -> Primary {Args} | BuiltInCall //(* Atom = Primary | Call {call이 builtInCall 포함}*)
+Primary -> "(" Expr ")" | id  |  ValueForm
 
-Primary -> "(" Expr ")" | id | BuiltIn |  ValueForm
-
-BuiltIn -> "newError" | "errString" | "scan" | "print" | "panic" | "len"
+BuiltInCall -> ("newError" | "errString" | "scan" | "print" | "panic" | "len") Args
 
 ValueForm -> Literal | Fexp
 Literal := number | Bool | strlit | "ok"

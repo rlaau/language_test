@@ -26,37 +26,33 @@ func (p *Parser) parseForRangeAexp() (*ForRangeAexp, error)   { panic("") }
 func (p *Parser) parseForWithAssign() (*ForWithAssign, error) { panic("") }
 func (p *Parser) parseBlock() (*Block, error)                 { panic("") }
 
-func (p *Parser) parseExpr() (Expr, error) { panic("") }
-
-func (p *Parser) parseFexp() (*Fexp, error) { panic("") }
-
 // Begin: Binary, Unary에 의한 추상 구문법으로 압축
 
-func (p *Parser) parseLexp() (Lexp, error) {
+func (p *Parser) parseExpr() (Expr, error) {
 	if !p.CheckProcessable() {
-		return nil, NewParseError("Lexp", ErrNotProcesable)
+		return nil, NewParseError("Expr", ErrNotProcesable)
 	}
 
-	lexp, err := p.parseBexp()
+	expr, err := p.parseBexp()
 	if err != nil {
-		return nil, NewParseError("Lexp", err)
+		return nil, NewParseError("Expr", err)
 	}
 
 	for {
 		if p.match(token.OR) == nil {
 			right, err := p.parseBexp()
 			if err != nil {
-				return nil, NewParseError("Lexp", err)
+				return nil, NewParseError("Expr", err)
 			}
-			lexp = newBinary(Or, lexp, right)
+			expr = newBinary(Or, expr, right)
 			continue
 		}
 		break
 	}
-	return lexp, nil
+	return expr, nil
 
 }
-func (p *Parser) parseBexp() (Lexp, error) {
+func (p *Parser) parseBexp() (Expr, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Bexp", ErrNotProcesable)
 	}
@@ -82,7 +78,7 @@ func (p *Parser) parseBexp() (Lexp, error) {
 
 }
 
-func (p *Parser) parseBterm() (Lexp, error) {
+func (p *Parser) parseBterm() (Expr, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Bterm", ErrNotProcesable)
 	}
@@ -128,7 +124,7 @@ func (p *Parser) parseBterm() (Lexp, error) {
 	return aexp, nil
 }
 
-func (p *Parser) parseAexp() (Lexp, error) {
+func (p *Parser) parseAexp() (Expr, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Aexp", ErrNotProcesable)
 	}
@@ -158,7 +154,7 @@ func (p *Parser) parseAexp() (Lexp, error) {
 	}
 	return binary, nil
 }
-func (p *Parser) parseTerm() (Lexp, error) {
+func (p *Parser) parseTerm() (Expr, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Term", ErrNotProcesable)
 	}
@@ -189,7 +185,7 @@ func (p *Parser) parseTerm() (Lexp, error) {
 
 	return binary, nil
 }
-func (p *Parser) parseFactor() (Lexp, error) {
+func (p *Parser) parseFactor() (Expr, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Factor", ErrNotProcesable)
 	}
@@ -209,28 +205,13 @@ func (p *Parser) parseFactor() (Lexp, error) {
 	return atom, nil
 }
 
-func (p *Parser) parseAtom() (Lexp, error) {
+func (p *Parser) parseAtom() (Atom, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Atom", ErrNotProcesable)
 	}
 
-	//1, "("+Expr+")" case: 이 경우 first가 Call의 "("+Expr+")"+Args와 겹칩
-	if p.match(token.LPAREN) == nil {
-		_, err := p.parseExpr()
-		if err != nil {
-			return nil, NewParseError("Atom", err)
-		}
-		err = p.match(token.RPAREN)
-		if err != nil {
-			return nil, NewParseError("Atom", err)
-		}
-		//Expr 이후 Args가 존재하지 않는 경우를 먼저 체크
-		peeked := p.tape.Peek(1)
-		if !(peeked.Kind == token.OMIT) && !(peeked.Kind == token.LPAREN) {
-			return nil, nil
-		}
-	}
-	panic("잠시 대기")
+	//rb := p.tape.GetRollback()
+	panic("잠시 스탑")
 }
 
 // End

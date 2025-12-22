@@ -461,42 +461,6 @@ func (b *Block) Stmt() string {
 }
 
 // Expr
-type Fexp struct {
-	ParamsOrNil      []Param
-	ReturnTypesOrNil []Type
-	Block            Block
-}
-
-var _ Expr = (*Fexp)(nil)
-
-func (f *Fexp) Print(depth int) []string {
-	lines := []string{}
-	lines = append(lines, LineWithDepth("Fexp(", depth))
-	pS := "["
-	params := JoinWithSepG(f.ParamsOrNil, ",")
-	pE := "]"
-
-	lines = append(lines, LineWithDepth(pS+params+pE, depth+1))
-	arrow := "=>"
-	lines = append(lines, LineWithDepth(arrow, depth+1))
-	rS := "["
-	r := JoinWithSepG(f.ReturnTypesOrNil, ",")
-	rE := "]"
-	lines = append(lines, LineWithDepth(rS+r+rE, depth+1))
-
-	lines = append(lines, f.Block.Print(depth+1)...)
-	lines = append(lines, LineWithDepth(")", depth))
-	return lines
-}
-
-func (f *Fexp) String() string {
-	return JoinLines(f.Print(0))
-}
-func (f *Fexp) Expr() string {
-	return f.String()
-}
-
-// Lexp
 type Unary struct {
 	Op     UnaryKind
 	Object Expr
@@ -509,7 +473,7 @@ func newUnary(op UnaryKind, expr Expr) *Unary {
 	}
 }
 
-var _ Lexp = (*Unary)(nil)
+var _ Expr = (*Unary)(nil)
 
 func (u *Unary) Print(depth int) []string {
 	var op string
@@ -536,18 +500,14 @@ func (u *Unary) Expr() string {
 	return u.String()
 }
 
-func (u *Unary) Lexp() string {
-	return u.String()
-}
-
 type UnaryKind int
 
 const (
 	MinusUnary UnaryKind = UnaryKind(token.MINUS)
-	Not      UnaryKind = UnaryKind(token.NOT)
+	Not        UnaryKind = UnaryKind(token.NOT)
 )
 
-// Lexp
+// Expr
 type Binary struct {
 	Op        BinaryKind
 	LeftExpr  Expr
@@ -562,7 +522,7 @@ func newBinary(op BinaryKind, left, right Expr) *Binary {
 	}
 }
 
-var _ Lexp = (*Binary)(nil)
+var _ Expr = (*Binary)(nil)
 
 func (b *Binary) Print(depth int) []string {
 	var op string
@@ -607,66 +567,60 @@ func (b *Binary) String() string {
 func (b *Binary) Expr() string {
 	return b.String()
 }
-func (b *Binary) Lexp() string {
-	return b.Expr()
-}
 
-// Lexp
-type Atom struct {
-	AtomKind   AtomKind
+// Expr
+
+type Primary struct {
+	PrimaryKind PrimaryKind
+
 	ExprOrNil  Expr
 	IdOrNil    *Id
-	CallOrNil  *Call
 	ValueOrNil *ValueForm
 }
 
-var _ Lexp = (*Atom)(nil)
+var _ Atom = (*Primary)(nil)
 
-func (a *Atom) Print(depth int) []string {
+func (p *Primary) Print(depth int) []string {
 	lines := []string{}
-	atomStart := "Atom("
-	lines = append(lines, LineWithDepth(atomStart, depth))
-	switch a.AtomKind {
-	case ExprAtom:
-		lines = append(lines, a.ExprOrNil.Print(depth+1)...)
+	primaryStart := "Primary("
+	lines = append(lines, LineWithDepth(primaryStart, depth))
+
+	switch p.PrimaryKind {
+	case ExprPrimary:
+		lines = append(lines, p.ExprOrNil.Print(depth+1)...)
 		lines = append(lines, LineWithDepth(")", depth))
 		return lines
-	case IdAtom:
-		idStr := "id " + a.IdOrNil.String()
+	case IdPrimary:
+		idStr := "id " + p.IdOrNil.String()
 		lines = append(lines, LineWithDepth(idStr, depth+1))
 		lines = append(lines, LineWithDepth(")", depth))
 		return lines
 
-	case CallAtom:
-		lines = append(lines, a.CallOrNil.Print(depth+1)...)
-		lines = append(lines, LineWithDepth(")", depth))
-		return lines
-	case ValueAtom:
-		lines = append(lines, a.ValueOrNil.Print(depth+1)...)
+	case ValuePrimary:
+		lines = append(lines, p.ValueOrNil.Print(depth+1)...)
 		lines = append(lines, LineWithDepth(")", depth))
 		return lines
 	}
-
-	panic("Atom.Print에서 스위치 케이스 미스매치")
+	panic("Primary.Print에서 스위치 케이스 미스매치")
 }
 
-func (a *Atom) String() string {
-	return JoinLines(a.Print(0))
-}
-func (a *Atom) Expr() string {
-	return a.String()
-}
-func (a *Atom) Lexp() string {
-	return a.String()
+func (p *Primary) String() string {
+	return JoinLines(p.Print(0))
 }
 
-type AtomKind int
+func (p *Primary) Expr() string {
+	return p.String()
+}
+func (p *Primary) Atom() string {
+	return p.String()
+}
+
+type PrimaryKind int
 
 const (
-	ExprAtom AtomKind = iota
-	IdAtom
-	CallAtom
-	ValueAtom
+	ExprPrimary PrimaryKind = iota
+	IdPrimary
+	ValuePrimary
 )
 
 type ValueForm struct {
@@ -729,17 +683,17 @@ const (
 type BinaryKind int
 
 const (
-	Plus  BinaryKind = BinaryKind(token.PLUS)
+	Plus        BinaryKind = BinaryKind(token.PLUS)
 	MinusBinary            = BinaryKind(token.MINUS)
-	Mul              = BinaryKind(token.MUL)
-	Div              = BinaryKind(token.DIV)
+	Mul                    = BinaryKind(token.MUL)
+	Div                    = BinaryKind(token.DIV)
 
 	Equal    = BinaryKind(token.EQUAL)
 	NotEqual = BinaryKind(token.NEQ)
 
-	GreaterThan        = BinaryKind(token.GT)
+	GreaterThan    = BinaryKind(token.GT)
 	GreaterOrEqual = BinaryKind(token.GTE)
-	LessThan           = BinaryKind(token.LT)
+	LessThan       = BinaryKind(token.LT)
 	LessOrEqual    = BinaryKind(token.LTE)
 
 	And = BinaryKind(token.AND)
@@ -747,13 +701,13 @@ const (
 )
 
 type Call struct {
-	CallKind    CallKind
-	IdOrNil     *Id
-	FexpOrNil   *Fexp
-	ExprOrNil   Expr
-	BuiltInKind BuiltInKind
-	ArgsList    []Args
+	IsBuilinCall     bool
+	PrimaryOrNil     *Primary
+	BuiltInKindOrNil BuiltInKind
+	ArgsList         []Args
 }
+
+var _ Atom = (*Call)(nil)
 
 func (c *Call) Print(depth int) []string {
 	lines := []string{}
@@ -761,9 +715,8 @@ func (c *Call) Print(depth int) []string {
 	lines = append(lines, LineWithDepth(callStart, depth))
 	var ce []string
 	toList := func(s string) []string { return []string{s} }
-	switch c.CallKind {
-	case BuiltInCall:
-		switch c.BuiltInKind {
+	if c.IsBuilinCall {
+		switch c.BuiltInKindOrNil {
 		case NewErrorBuild:
 			ce = toList(LineWithDepth("id: newError", depth+1))
 		case ErrStringBuild:
@@ -777,15 +730,20 @@ func (c *Call) Print(depth int) []string {
 		case LenBuild:
 			ce = toList(LineWithDepth("id: len", depth+1))
 		}
-	case IdCall:
-		ce = toList(LineWithDepth("id: "+c.IdOrNil.String(), depth+1))
-	case FexpCall:
-		lines = append(lines, LineWithDepth("fexp:", depth+1))
-		ce = c.FexpOrNil.Print(depth + 1)
-	case ExprCall:
-		lines = append(lines, LineWithDepth("expr", depth+1))
-		ce = c.ExprOrNil.Print(depth + 1)
+	} else {
+		primary := c.PrimaryOrNil
+		switch primary.PrimaryKind {
+		case IdPrimary:
+			ce = toList(LineWithDepth("id: "+(*primary.IdOrNil).String(), depth+1))
+		case ValuePrimary:
+			lines = append(lines, LineWithDepth("valueForm:", depth+1))
+			ce = primary.ValueOrNil.Print(depth + 1)
+		case ExprPrimary:
+			lines = append(lines, LineWithDepth("expr", depth+1))
+			ce = primary.ExprOrNil.Print(depth + 1)
+		}
 	}
+
 	lines = append(lines, ce...)
 	for _, arg := range c.ArgsList {
 		lines = append(lines, arg.Print(depth+1)...)
@@ -797,6 +755,14 @@ func (c *Call) Print(depth int) []string {
 
 func (c *Call) String() string {
 	return JoinLines(c.Print(0))
+}
+
+func (c *Call) Expr() string {
+	return c.String()
+}
+
+func (c *Call) Atom() string {
+	return c.String()
 }
 
 type Args []Expr
@@ -821,9 +787,9 @@ type CallKind int
 
 const (
 	BuiltInCall CallKind = iota
-	IdCall
-	FexpCall
-	ExprCall
+	PrimaryIdCall
+	PrimaryFexpCall
+	PrimaryExprCall
 )
 
 type BuiltInKind int
@@ -836,3 +802,29 @@ const (
 	PanicBuild
 	LenBuild
 )
+
+type Fexp struct {
+	ParamsOrNil      []Param
+	ReturnTypesOrNil []Type
+	Block            Block
+}
+
+func (f *Fexp) Print(depth int) []string {
+	lines := []string{}
+	lines = append(lines, LineWithDepth("Fexp(", depth))
+	pS := "["
+	params := JoinWithSepG(f.ParamsOrNil, ",")
+	pE := "]"
+
+	lines = append(lines, LineWithDepth(pS+params+pE, depth+1))
+	arrow := "=>"
+	lines = append(lines, LineWithDepth(arrow, depth+1))
+	rS := "["
+	r := JoinWithSepG(f.ReturnTypesOrNil, ",")
+	rE := "]"
+	lines = append(lines, LineWithDepth(rS+r+rE, depth+1))
+
+	lines = append(lines, f.Block.Print(depth+1)...)
+	lines = append(lines, LineWithDepth(")", depth))
+	return lines
+}

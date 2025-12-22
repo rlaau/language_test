@@ -32,8 +32,8 @@ func testSimpleVarDecl() {
 				Ids:  []parser.Id{"a"},
 				Type: parser.Type{TypeKind: parser.IntType},
 				ExprsOrNil: []parser.Expr{
-					&parser.Atom{
-						AtomKind: parser.ValueAtom,
+					&parser.Primary{
+						PrimaryKind: parser.ValuePrimary,
 						ValueOrNil: &parser.ValueForm{
 							ValueKind:   parser.NumberValue,
 							NumberOrNil: &num,
@@ -65,13 +65,13 @@ func testFuncDeclWithParams() {
 							ExprsOrNil: []parser.Expr{
 								&parser.Binary{
 									Op: parser.Plus,
-									LeftExpr: &parser.Atom{
-										AtomKind: parser.IdAtom,
-										IdOrNil:  ptrId("a"),
+									LeftExpr: &parser.Primary{
+										PrimaryKind: parser.IdPrimary,
+										IdOrNil:     ptrId("a"),
 									},
-									RightExpr: &parser.Atom{
-										AtomKind: parser.IdAtom,
-										IdOrNil:  ptrId("b"),
+									RightExpr: &parser.Primary{
+										PrimaryKind: parser.IdPrimary,
+										IdOrNil:     ptrId("b"),
 									},
 								},
 							},
@@ -107,12 +107,12 @@ func testComplexFuncWithIf() {
 						&parser.If{
 							Bexp: &parser.Binary{
 								Op: parser.Equal,
-								LeftExpr: &parser.Atom{
-									AtomKind: parser.IdAtom,
-									IdOrNil:  ptrId("b"),
+								LeftExpr: &parser.Primary{
+									PrimaryKind: parser.IdPrimary,
+									IdOrNil:     ptrId("b"),
 								},
-								RightExpr: &parser.Atom{
-									AtomKind: parser.ValueAtom,
+								RightExpr: &parser.Primary{
+									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
 										ValueKind:   parser.NumberValue,
 										NumberOrNil: &zero,
@@ -123,26 +123,23 @@ func testComplexFuncWithIf() {
 								StmtsOrNil: []parser.Stmt{
 									&parser.Return{
 										ExprsOrNil: []parser.Expr{
-											&parser.Atom{
-												AtomKind: parser.ValueAtom,
+											&parser.Primary{
+												PrimaryKind: parser.ValuePrimary,
 												ValueOrNil: &parser.ValueForm{
 													ValueKind:   parser.NumberValue,
 													NumberOrNil: &zero,
 												},
 											},
-											&parser.Atom{
-												AtomKind: parser.CallAtom,
-												CallOrNil: &parser.Call{
-													CallKind:    parser.BuiltInCall,
-													BuiltInKind: parser.NewErrorBuild,
-													ArgsList: []parser.Args{
-														{
-															&parser.Atom{
-																AtomKind: parser.ValueAtom,
-																ValueOrNil: &parser.ValueForm{
-																	ValueKind:   parser.StrLitValue,
-																	StrLitOrNil: &errMsg,
-																},
+											&parser.Call{
+												IsBuilinCall:     true,
+												BuiltInKindOrNil: parser.NewErrorBuild,
+												ArgsList: []parser.Args{
+													{
+														&parser.Primary{
+															PrimaryKind: parser.ValuePrimary,
+															ValueOrNil: &parser.ValueForm{
+																ValueKind:   parser.StrLitValue,
+																StrLitOrNil: &errMsg,
 															},
 														},
 													},
@@ -157,17 +154,17 @@ func testComplexFuncWithIf() {
 							ExprsOrNil: []parser.Expr{
 								&parser.Binary{
 									Op: parser.Div,
-									LeftExpr: &parser.Atom{
-										AtomKind: parser.IdAtom,
-										IdOrNil:  ptrId("a"),
+									LeftExpr: &parser.Primary{
+										PrimaryKind: parser.IdPrimary,
+										IdOrNil:     ptrId("a"),
 									},
-									RightExpr: &parser.Atom{
-										AtomKind: parser.IdAtom,
-										IdOrNil:  ptrId("b"),
+									RightExpr: &parser.Primary{
+										PrimaryKind: parser.IdPrimary,
+										IdOrNil:     ptrId("b"),
 									},
 								},
-								&parser.Atom{
-									AtomKind: parser.ValueAtom,
+								&parser.Primary{
+									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
 										ValueKind: parser.ErrValue,
 										ErrOrNil:  &nilStr,
@@ -197,8 +194,8 @@ func testForLoop() {
 				Block: parser.Block{
 					StmtsOrNil: []parser.Stmt{
 						&parser.ForRangeAexp{
-							Aexp: &parser.Atom{
-								AtomKind: parser.ValueAtom,
+							Aexp: &parser.Primary{
+								PrimaryKind: parser.ValuePrimary,
 								ValueOrNil: &parser.ValueForm{
 									ValueKind:   parser.NumberValue,
 									NumberOrNil: &ten,
@@ -208,12 +205,12 @@ func testForLoop() {
 								StmtsOrNil: []parser.Stmt{
 									&parser.CallStmt{
 										Call: parser.Call{
-											CallKind:    parser.BuiltInCall,
-											BuiltInKind: parser.PrintKBuild,
+											IsBuilinCall:     true,
+											BuiltInKindOrNil: parser.PrintKBuild,
 											ArgsList: []parser.Args{
 												{
-													&parser.Atom{
-														AtomKind: parser.ValueAtom,
+													&parser.Primary{
+														PrimaryKind: parser.ValuePrimary,
 														ValueOrNil: &parser.ValueForm{
 															ValueKind:   parser.StrLitValue,
 															StrLitOrNil: &hello,
@@ -254,15 +251,15 @@ func testCompletePackage() {
 						&parser.ShortDecl{
 							Ids: []parser.Id{"a", "b"},
 							Exprs: []parser.Expr{
-								&parser.Atom{
-									AtomKind: parser.ValueAtom,
+								&parser.Primary{
+									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
 										ValueKind:   parser.NumberValue,
 										NumberOrNil: &four,
 									},
 								},
-								&parser.Atom{
-									AtomKind: parser.ValueAtom,
+								&parser.Primary{
+									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
 										ValueKind:   parser.NumberValue,
 										NumberOrNil: &two,
@@ -273,16 +270,16 @@ func testCompletePackage() {
 						&parser.ShortDecl{
 							Ids: []parser.Id{"divided", "err"},
 							Exprs: []parser.Expr{
-								&parser.Atom{
-									AtomKind: parser.CallAtom,
-									CallOrNil: &parser.Call{
-										CallKind: parser.IdCall,
-										IdOrNil:  ptrId("divide"),
-										ArgsList: []parser.Args{
-											{
-												&parser.Atom{AtomKind: parser.IdAtom, IdOrNil: ptrId("a")},
-												&parser.Atom{AtomKind: parser.IdAtom, IdOrNil: ptrId("b")},
-											},
+								&parser.Call{
+									IsBuilinCall: false,
+									PrimaryOrNil: &parser.Primary{
+										PrimaryKind: parser.IdPrimary,
+										IdOrNil:     ptrId("divide"),
+									},
+									ArgsList: []parser.Args{
+										{
+											&parser.Primary{PrimaryKind: parser.IdPrimary, IdOrNil: ptrId("a")},
+											&parser.Primary{PrimaryKind: parser.IdPrimary, IdOrNil: ptrId("b")},
 										},
 									},
 								},
@@ -291,12 +288,12 @@ func testCompletePackage() {
 						&parser.If{
 							Bexp: &parser.Binary{
 								Op: parser.NotEqual,
-								LeftExpr: &parser.Atom{
-									AtomKind: parser.IdAtom,
-									IdOrNil:  ptrId("err"),
+								LeftExpr: &parser.Primary{
+									PrimaryKind: parser.IdPrimary,
+									IdOrNil:     ptrId("err"),
 								},
-								RightExpr: &parser.Atom{
-									AtomKind: parser.ValueAtom,
+								RightExpr: &parser.Primary{
+									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
 										ValueKind: parser.ErrValue,
 										ErrOrNil:  &nilStr,
@@ -307,11 +304,11 @@ func testCompletePackage() {
 								StmtsOrNil: []parser.Stmt{
 									&parser.CallStmt{
 										Call: parser.Call{
-											CallKind:    parser.BuiltInCall,
-											BuiltInKind: parser.PanicBuild,
+											IsBuilinCall:     true,
+											BuiltInKindOrNil: parser.PanicBuild,
 											ArgsList: []parser.Args{
 												{
-													&parser.Atom{AtomKind: parser.IdAtom, IdOrNil: ptrId("err")},
+													&parser.Primary{PrimaryKind: parser.IdPrimary, IdOrNil: ptrId("err")},
 												},
 											},
 										},
@@ -338,12 +335,12 @@ func testCompletePackage() {
 						&parser.If{
 							Bexp: &parser.Binary{
 								Op: parser.Equal,
-								LeftExpr: &parser.Atom{
-									AtomKind: parser.IdAtom,
-									IdOrNil:  ptrId("b"),
+								LeftExpr: &parser.Primary{
+									PrimaryKind: parser.IdPrimary,
+									IdOrNil:     ptrId("b"),
 								},
-								RightExpr: &parser.Atom{
-									AtomKind: parser.ValueAtom,
+								RightExpr: &parser.Primary{
+									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
 										ValueKind:   parser.NumberValue,
 										NumberOrNil: &zero,
@@ -354,26 +351,23 @@ func testCompletePackage() {
 								StmtsOrNil: []parser.Stmt{
 									&parser.Return{
 										ExprsOrNil: []parser.Expr{
-											&parser.Atom{
-												AtomKind: parser.ValueAtom,
+											&parser.Primary{
+												PrimaryKind: parser.ValuePrimary,
 												ValueOrNil: &parser.ValueForm{
 													ValueKind:   parser.NumberValue,
 													NumberOrNil: &zero,
 												},
 											},
-											&parser.Atom{
-												AtomKind: parser.CallAtom,
-												CallOrNil: &parser.Call{
-													CallKind:    parser.BuiltInCall,
-													BuiltInKind: parser.NewErrorBuild,
-													ArgsList: []parser.Args{
-														{
-															&parser.Atom{
-																AtomKind: parser.ValueAtom,
-																ValueOrNil: &parser.ValueForm{
-																	ValueKind:   parser.StrLitValue,
-																	StrLitOrNil: &errMsg,
-																},
+											&parser.Call{
+												IsBuilinCall:     true,
+												BuiltInKindOrNil: parser.NewErrorBuild,
+												ArgsList: []parser.Args{
+													{
+														&parser.Primary{
+															PrimaryKind: parser.ValuePrimary,
+															ValueOrNil: &parser.ValueForm{
+																ValueKind:   parser.StrLitValue,
+																StrLitOrNil: &errMsg,
 															},
 														},
 													},
@@ -388,17 +382,17 @@ func testCompletePackage() {
 							ExprsOrNil: []parser.Expr{
 								&parser.Binary{
 									Op: parser.Div,
-									LeftExpr: &parser.Atom{
-										AtomKind: parser.IdAtom,
-										IdOrNil:  ptrId("a"),
+									LeftExpr: &parser.Primary{
+										PrimaryKind: parser.IdPrimary,
+										IdOrNil:     ptrId("a"),
 									},
-									RightExpr: &parser.Atom{
-										AtomKind: parser.IdAtom,
-										IdOrNil:  ptrId("b"),
+									RightExpr: &parser.Primary{
+										PrimaryKind: parser.IdPrimary,
+										IdOrNil:     ptrId("b"),
 									},
 								},
-								&parser.Atom{
-									AtomKind: parser.ValueAtom,
+								&parser.Primary{
+									PrimaryKind: parser.ValuePrimary,
 									ValueOrNil: &parser.ValueForm{
 										ValueKind: parser.ErrValue,
 										ErrOrNil:  &nilStr,
