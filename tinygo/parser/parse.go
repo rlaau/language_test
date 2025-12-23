@@ -7,7 +7,17 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
-func (p *Parser) ParsePackage() (*Package, error) { panic("not implemented") }
+func (p *Parser) ParsePackage() (*Package, error) {
+	//! 최상단 패키지에선 받은 에러가 IsEof시에는 non-error로 처리하기
+	if !p.CheckProcessable() {
+		if IsEof(p.CurrentToken()) {
+			return nil, nil
+		}
+		return nil, NewParseError("Expr", ErrNotProcesable)
+	}
+
+	panic("not implemented")
+}
 
 func (p *Parser) parseDecl() (Decl, error)          { panic("") }
 func (p *Parser) parseVarDecl() (*ValDecl, error)   { panic("") }
@@ -203,14 +213,6 @@ func (p *Parser) parseFactor() (Expr, error) {
 	return atom, nil
 }
 
-// var checkIdIsBuilIn = func(p *Primary) bool {
-// 	if p.PrimaryKind == IdPrimary {
-// 		_, ok := builtInSet[p.IdOrNil.String()]
-// 		return ok
-// 	}
-// 	return false
-// }
-
 func (p *Parser) parseAtom() (Atom, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Atom", ErrNotProcesable)
@@ -246,7 +248,7 @@ func (p *Parser) parseAtom() (Atom, error) {
 	}
 
 	// args >=1 인 경우 call로 리턴
-	return newCall(false, primary, LenBuild, argsOrZero), nil
+	return newCall(false, primary, NewErrorBuild, argsOrZero), nil
 }
 
 func (p *Parser) parseBuiltInCall() (*Call, error) {

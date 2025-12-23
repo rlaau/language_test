@@ -763,6 +763,8 @@ func (c *Call) Print(depth int) []string {
 	lines := []string{}
 	callStart := "call<"
 	lines = append(lines, LineWithDepth(callStart, depth))
+	builtInInfo := fmt.Sprintf("isBuiltIn: %v", c.IsBuilinCall)
+	lines = append(lines, LineWithDepth(builtInInfo, depth+1))
 	var ce []string
 	toList := func(s string) []string { return []string{s} }
 	if c.IsBuilinCall {
@@ -782,6 +784,8 @@ func (c *Call) Print(depth int) []string {
 		}
 	} else {
 		primary := c.PrimaryOrNil
+		dummyBuiltIn := fmt.Sprintf("dummyBuiltInValue: %d", c.BuiltInKindOrNil)
+		lines = append(lines, LineWithDepth(dummyBuiltIn, depth+1))
 		switch primary.PrimaryKind {
 		case IdPrimary:
 			ce = toList(LineWithDepth("id: "+(*primary.IdOrNil).String(), depth+1))
