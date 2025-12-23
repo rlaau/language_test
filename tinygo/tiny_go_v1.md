@@ -134,7 +134,7 @@ ReturnTypes ->  Type
 | "(" Type {"," Type} ")" 
 
 Stmt -> Assign
-    |   Call End
+    |   CallStmt
     |   ShortDecl
     |   VarDecl
     |   FuncDecl
@@ -143,10 +143,12 @@ Stmt -> Assign
     |   For
     |   Block
 Assign -> id {"," id} "=" Expr {"," Expr} End
+CallStmt-> Call End
 Call -> Primary Args {Args} | BuiltInCall
 ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
 Return -> "return" [Expr {"," Expr}] End
 If -> "if" [ShortDecl] Bexp Block ["else" Block ]
+
 For ->  "for" Bexp Block
     |   "for" ShortDecl Bexp End id "=" Expr End Block 
     |   "for" "range" Aexp Block

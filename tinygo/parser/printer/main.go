@@ -28,7 +28,7 @@ func testSimpleVarDecl() {
 	num := 10
 	pkg := &parser.Package{
 		DeclsOrNil: []parser.Decl{
-			&parser.ValDecl{
+			&parser.VarDecl{
 				Ids:  []parser.Id{"a"},
 				Type: parser.Type{TypeKind: parser.IntType},
 				ExprsOrNil: []parser.Expr{

@@ -31,6 +31,8 @@ func (p *Parser) match(t token.TokenKind) error {
 	return errors.New(matchErrorMsg)
 }
 
+var ErrMissingSemicolon error = errors.New("세미콜론 누락")
+
 // ErrNotProcesable 은 파서가 파싱 불가 상태 마주 시 리턴할 에러이다.
 var ErrNotProcesable error = errors.New("파서가 현재 위치에서는 더 이상 파싱을 진행할 수 없습니다. (EOF or ILLEGAL)")
 
@@ -42,10 +44,11 @@ type ParseError struct {
 
 func (pe *ParseError) Error() string {
 	line1 := "failed:" + pe.headMsg
-	line2 := "beacuseOf(" + pe.tailError.Error() + ")"
+	line2 := "beacuseOf->" + pe.tailError.Error()
 	lines := []string{line1, line2}
 	return JoinLines(lines)
 }
+
 func (pe *ParseError) String() string {
 	return pe.Error()
 }
@@ -55,9 +58,6 @@ func NewParseError(errorOccued string, becauseOf error) *ParseError {
 		headMsg:   fmt.Sprintf("parse%s", errorOccued),
 		tailError: becauseOf,
 	}
-}
-func formatParsingErr(errOccuredHere string, becauseOfThat error) error {
-	return fmt.Errorf("parse%s failed:(%w)", errOccuredHere, becauseOfThat)
 }
 
 // CheckProcessable은 파싱 준비에 앞서, 파서가 더 진행 가능한지를 확인한다.

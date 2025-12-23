@@ -12,6 +12,11 @@ type Package struct {
 	DeclsOrNil []Decl
 }
 
+func newPackage(declsOrNil []Decl) *Package {
+	return &Package{
+		DeclsOrNil: declsOrNil,
+	}
+}
 func (p *Package) Print(depth int) []string {
 
 	var pkgStrings []string
@@ -34,15 +39,23 @@ func (p *Package) String() string {
 }
 
 // Decl
-type ValDecl struct {
+type VarDecl struct {
 	Ids        []Id
 	Type       Type
 	ExprsOrNil []Expr
 }
 
-var _ Decl = (*ValDecl)(nil)
+func newVarDecl(ids []Id, t Type, exprsOrNil []Expr) *VarDecl {
+	return &VarDecl{
+		Ids:        ids,
+		Type:       t,
+		ExprsOrNil: exprsOrNil,
+	}
+}
 
-func (v *ValDecl) Print(depth int) []string {
+var _ Decl = (*VarDecl)(nil)
+
+func (v *VarDecl) Print(depth int) []string {
 
 	var lines []string
 	start := "VarDecl("
@@ -69,10 +82,14 @@ func (v *ValDecl) Print(depth int) []string {
 	return lines
 }
 
-func (v *ValDecl) String() string {
+func (v *VarDecl) String() string {
 	return JoinLines(v.Print(0))
 }
-func (v *ValDecl) Decl() string {
+func (v *VarDecl) Decl() string {
+	return v.String()
+}
+
+func (v *VarDecl) Stmt() string {
 	return v.String()
 }
 
@@ -82,6 +99,15 @@ type FuncDecl struct {
 	ParamsOrNil      []Param
 	ReturnTypesOrNil []Type
 	Block            Block
+}
+
+func newFuncDecl(id Id, pOrNil []Param, rOrNil []Type, block Block) *FuncDecl {
+	return &FuncDecl{
+		Id:               id,
+		ParamsOrNil:      pOrNil,
+		ReturnTypesOrNil: rOrNil,
+		Block:            block,
+	}
 }
 
 var _ Decl = (*FuncDecl)(nil)
@@ -117,6 +143,10 @@ func (f *FuncDecl) String() string {
 }
 
 func (f *FuncDecl) Decl() string {
+	return f.String()
+}
+
+func (f *FuncDecl) Stmt() string {
 	return f.String()
 }
 
@@ -216,6 +246,13 @@ type Assign struct {
 	Exprs []Expr
 }
 
+func newAssign(ids []Id, exprs []Expr) *Assign {
+	return &Assign{
+		Ids:   ids,
+		Exprs: exprs,
+	}
+}
+
 var _ Stmt = (*Assign)(nil)
 
 func (a *Assign) Print(depth int) []string {
@@ -250,8 +287,13 @@ func (a *Assign) Stmt() string {
 
 // stmt
 type CallStmt struct {
-	Call   Call
-	IsExpr bool
+	//Call이 표현이 아닌 "Statement"로 쓰였음을 강조하기 위해서
+	// 이렇게 따로 빼 둠
+	Call Call
+}
+
+func newCallStmt(call Call) *CallStmt {
+	return &CallStmt{Call: call}
 }
 
 var _ Stmt = (*CallStmt)(nil)
@@ -279,6 +321,13 @@ func (c *CallStmt) Stmt() string {
 type ShortDecl struct {
 	Ids   []Id
 	Exprs []Expr
+}
+
+func newShortDecl(ids []Id, exprs []Expr) *ShortDecl {
+	return &ShortDecl{
+		Ids:   ids,
+		Exprs: exprs,
+	}
 }
 
 var _ Stmt = (*ShortDecl)(nil)
@@ -315,6 +364,12 @@ type Return struct {
 	ExprsOrNil []Expr
 }
 
+func newReturn(exprsOrNil []Expr) *Return {
+	return &Return{
+		ExprsOrNil: exprsOrNil,
+	}
+}
+
 var _ Stmt = (*Return)(nil)
 
 func (r *Return) Print(depth int) []string {
@@ -344,6 +399,15 @@ type If struct {
 	Bexp           Expr
 	ThenBlock      Block
 	ElseOrNil      *Block
+}
+
+func newIf(shorDeclOrNil *ShortDecl, bexp Expr, thenBlock Block, elseOrNil *Block) *If {
+	return &If{
+		ShortDeclOrNil: shorDeclOrNil,
+		Bexp:           bexp,
+		ThenBlock:      thenBlock,
+		ElseOrNil:      elseOrNil,
+	}
 }
 
 var _ Stmt = (*If)(nil)
@@ -383,6 +447,13 @@ type ForBexp struct {
 	Block Block
 }
 
+func newForBexp(bexp Expr, block Block) *ForBexp {
+	return &ForBexp{
+		Bexp:  bexp,
+		Block: block,
+	}
+}
+
 var _ Stmt = (*ForBexp)(nil)
 
 func (f *ForBexp) Print(depth int) []string {
@@ -409,6 +480,15 @@ type ForWithAssign struct {
 	Bexp      Expr
 	Assign    Assign
 	Block     Block
+}
+
+func newForWithAssign(shortDecl ShortDecl, bexp Expr, assign Assign, block Block) *ForWithAssign {
+	return &ForWithAssign{
+		ShortDecl: shortDecl,
+		Bexp:      bexp,
+		Assign:    assign,
+		Block:     block,
+	}
 }
 
 var _ Stmt = (*ForWithAssign)(nil)
@@ -439,6 +519,13 @@ type ForRangeAexp struct {
 	Block Block
 }
 
+func newForRangeAexp(aexp Expr, block Block) *ForRangeAexp {
+	return &ForRangeAexp{
+		Aexp:  aexp,
+		Block: block,
+	}
+}
+
 var _ Stmt = (*ForRangeAexp)(nil)
 
 func (f *ForRangeAexp) Print(depth int) []string {
@@ -460,6 +547,12 @@ func (f *ForRangeAexp) Stmt() string {
 // Stmt
 type Block struct {
 	StmtsOrNil []Stmt
+}
+
+func newBlock(stmtsOrNil []Stmt) *Block {
+	return &Block{
+		StmtsOrNil: stmtsOrNil,
+	}
 }
 
 var _ Stmt = (*Block)(nil)
@@ -751,12 +844,12 @@ type Call struct {
 
 var _ Atom = (*Call)(nil)
 
-func newCall(isBuiltIn bool, primaryOrNil *Primary, builtInKindOrNil BuiltInKind, args []Args) *Call {
+func newCall(isBuiltIn bool, primaryOrNil *Primary, builtInKindOrNil BuiltInKind, argsList []Args) *Call {
 	return &Call{
 		IsBuilinCall:     isBuiltIn,
 		PrimaryOrNil:     primaryOrNil,
 		BuiltInKindOrNil: builtInKindOrNil,
-		ArgsList:         args,
+		ArgsList:         argsList,
 	}
 }
 func (c *Call) Print(depth int) []string {
