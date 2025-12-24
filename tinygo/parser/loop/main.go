@@ -55,7 +55,7 @@ func main() {
 		ps := parser.NewParser(lx)
 		parsed, err := ps.ParsePackage()
 		if err != nil {
-			// println 대신, 보기 좋게
+
 			fmt.Printf("error: %v\n", err)
 			continue
 		}

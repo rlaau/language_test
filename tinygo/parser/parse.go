@@ -8,46 +8,6 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
-//파싱할 구문들
-
-const (
-	PackageSyntax       string = "Package"
-	DeclSyntax                 = "Decl"
-	VarDeclSyntax              = "VarDecl"
-	FuncDeclSyntax             = "FuncDecl"
-	StmtSyntax                 = "Stmt"
-	AssignSyntax               = "Assign"
-	CallStmtSyntax             = "CallStmt"
-	CallSyntax                 = "Call"
-	ShortDeclSyntax            = "ShortDecl"
-	ReturnSyntax               = "Return"
-	IfSyntax                   = "If"
-	ForBexpSyntax              = "ForBexp"
-	ForWithAssignSyntax        = "ForWithAssign"
-	ForRageAexpSyntax          = "ForRangeAexp"
-	BlockSyntax                = "Block"
-	ExprSyntax                 = "Expr"
-	BexpSyntax                 = "Bexp"
-	BtermSyntax                = "Bterm"
-	AexpSyntax                 = "Aexp"
-	TermSyntax                 = "Term"
-	FactorSyntax               = "Factor"
-	AtomSyntax                 = "Atom"
-	BuiltInCallSyntax          = "BuiltInCall"
-	PrimarySyntax              = "Primary"
-	ArgsSyntax                 = "Args"
-	ValueFormSyntax            = "ValueForm"
-	FexpSyntax                 = "Fexp"
-	ParamsSyntax               = "Params"
-	ParamSyntax                = "Param"
-	IdSyntax                   = "Id"
-	ReturnTypesSyntax          = "ReturnTypes"
-	TypeSyntax                 = "Type"
-	FuncTypeSyntax             = "FuncType"
-	IdListLongerThan0          = "IdListLongerThea0"
-	ExprListLongerTHan0        = "ExprListLongerThea0"
-)
-
 func (p *Parser) ParsePackage() (*Package, error) {
 	if !p.CheckProcessable() {
 		return newPackage(nil), nil
@@ -357,7 +317,7 @@ func (p *Parser) parseReturn() (*Return, error) {
 		return nil, NewParseError("Return", err)
 	}
 	if p.match(token.SEMICOLON) != nil {
-		return nil, NewParseError(ReturnSyntax, ErrMissingSemicolon)
+		return nil, NewParseError("Return", ErrMissingSemicolon)
 	}
 	return newReturn(exprs), nil
 }
@@ -375,6 +335,7 @@ func (p *Parser) parseIf() (*If, error) {
 	if err != nil {
 		rollBack()
 	}
+
 	bexp, err := p.parseBexp()
 	if err != nil {
 		return nil, NewParseError("If", err)
@@ -464,15 +425,15 @@ func (p *Parser) parseForRangeAexp() (*ForRangeAexp, error) {
 	}
 
 	if p.match(token.RANGE) != nil {
-		return nil, NewParseError(ForRageAexpSyntax, errors.New("range키워드 누락"))
+		return nil, NewParseError("ForRangeAexp", errors.New("range키워드 누락"))
 	}
 	aexp, err := p.parseAexp()
 	if err != nil {
-		return nil, NewParseError(ForRageAexpSyntax, err)
+		return nil, NewParseError("ForRangeAexp", err)
 	}
 	block, err := p.parseBlock()
 	if err != nil {
-		return nil, NewParseError(ForRageAexpSyntax, err)
+		return nil, NewParseError("ForRangeAexp", err)
 	}
 	return newForRangeAexp(aexp, *block), nil
 }
@@ -481,7 +442,7 @@ func (p *Parser) parseBlock() (*Block, error) {
 		return nil, NewParseError("Block", ErrNotProcesable)
 	}
 	if p.match(token.LBRACE) != nil {
-		return nil, NewParseError(BlockSyntax, errors.New("\"{\" 기호 누락"))
+		return nil, NewParseError("Block", errors.New("맺음 위치에 \"{\" 기호가 존재하지 않음"))
 	}
 	stmts := []Stmt{}
 	for {
@@ -495,7 +456,7 @@ func (p *Parser) parseBlock() (*Block, error) {
 		stmts = append(stmts, stms)
 	}
 	if p.match(token.RBRACE) != nil {
-		return nil, NewParseError(BlockSyntax, errors.New("\"}\"기호 누락"))
+		return nil, NewParseError("Block", errors.New("맺음 위치에 \"}\"기호가 존재하지 않음."))
 	}
 	return newBlock(stmts), nil
 }
@@ -533,6 +494,7 @@ func (p *Parser) parseBexp() (Expr, error) {
 
 	bexp, err := p.parseBterm()
 	if err != nil {
+
 		return nil, NewParseError("Bexp", err)
 	}
 
@@ -565,6 +527,7 @@ func (p *Parser) parseBterm() (Expr, error) {
 	}
 
 	aexp, err := p.parseAexp()
+
 	if err != nil {
 		return nil, NewParseError("Btem", err)
 	}
@@ -589,6 +552,7 @@ func (p *Parser) parseBterm() (Expr, error) {
 	}
 
 	if relop, err := matchRelop(); err == nil {
+		p.match(p.CurrentToken().Kind)
 		secondAexp, err := p.parseAexp()
 		if err != nil {
 			return nil, NewParseError("Bterm", err)
@@ -602,6 +566,7 @@ func (p *Parser) parseAexp() (Expr, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Aexp", ErrNotProcesable)
 	}
+
 	binary, err := p.parseTerm()
 	if err != nil {
 		return nil, NewParseError("Aexp", err)
@@ -663,6 +628,7 @@ func (p *Parser) parseFactor() (Expr, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Factor", ErrNotProcesable)
 	}
+
 	isMinus := false
 	if p.match(token.MINUS) == nil {
 		isMinus = true
@@ -686,6 +652,7 @@ func (p *Parser) parseAtom() (Atom, error) {
 
 	// 빌트인 콜인 경우를 가장 먼저 검사
 	rollBack := p.tape.GetRollback()
+
 	builtInCall, err := p.parseBuiltInCall()
 	if err == nil {
 		return builtInCall, nil
