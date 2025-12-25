@@ -46,13 +46,6 @@ const (
 	LET
 	IN
 
-	// 내장 함수 키워드
-	SCAN
-	PRINT
-	PANIC
-	NEWERROR
-	ERRSTRING
-	LEN
 	END_OF_KEYWORD
 )
 const (
@@ -162,19 +155,6 @@ func StringSpec(t TokenKind) string {
 	case IN:
 		return "in"
 
-	case SCAN:
-		return "scan"
-	case PRINT:
-		return "print"
-	case PANIC:
-		return "panic"
-	case NEWERROR:
-		return "newError"
-	case ERRSTRING:
-		return "errString"
-	case LEN:
-		return "len"
-
 	case ID:
 		return ""
 
@@ -239,7 +219,6 @@ func StringSpec(t TokenKind) string {
 		panic(msg)
 	}
 }
-
 
 func IsKeyWord(s string) (TokenKind, bool) {
 	return isStringInRange(s, START_OF_KEYWORD, END_OF_KEYWORD)

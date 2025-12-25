@@ -8,16 +8,16 @@ import (
 )
 
 // Node
-type Package struct {
+type PackageAST struct {
 	DeclsOrNil []Decl
 }
 
-func newPackage(declsOrNil []Decl) *Package {
-	return &Package{
+func newPackage(declsOrNil []Decl) *PackageAST {
+	return &PackageAST{
 		DeclsOrNil: declsOrNil,
 	}
 }
-func (p *Package) Print(depth int) []string {
+func (p *PackageAST) Print(depth int) []string {
 
 	var pkgStrings []string
 	pkgStart := LineWithDepth("Package Start -------", depth)
@@ -34,7 +34,7 @@ func (p *Package) Print(depth int) []string {
 	return pkgStrings
 }
 
-func (p *Package) String() string {
+func (p *PackageAST) String() string {
 	return JoinLines(p.Print(0))
 }
 
@@ -165,15 +165,47 @@ func (p Param) String() string {
 	return "<" + p.Id.String() + "," + p.Type.String() + ">"
 }
 
-type Id string
+// AST 쪽: "의미"만 가진다.
+type Id struct {
+	Name   string
+	Symbol *Symbol // resolver가 채움 (또는 SymID만)
+}
+
+// 선언(의미의 정체)
+type Symbol struct {
+	//ID는 논리적 동일성의 기준
+	// 모든 변수에 대해 고유해야 하고, 불변해야 함
+	ID   uint32
+	Name string //디버깅 위해서 Name 정보 역시 들고 감.
+	Kind SymbolKind
+}
+
+type SymbolKind uint8
+
+const (
+	SymVar SymbolKind = iota
+	SymFunc
+	SymType
+	SymBuiltin // builtin은 따로 둬도 됨
+)
 
 func newId(token token.Token) *Id {
 	value := string(token.Value)
-	id := Id(value)
-	return &id
+
+	return &Id{
+		Name:   value,
+		Symbol: nil,
+	}
 }
 func (i Id) String() string {
-	return string(i)
+	if i.Symbol != nil {
+		builtIn := ""
+		if i.Symbol.Kind == SymBuiltin {
+			builtIn = ":builtIn"
+		}
+		return i.Name + "-#" + strconv.Itoa(int(i.Symbol.ID)) + builtIn
+	}
+	return i.Name + "-NotBound"
 }
 
 type Type struct {
@@ -836,59 +868,34 @@ const (
 )
 
 type Call struct {
-	IsBuilinCall     bool
-	PrimaryOrNil     *Primary
-	BuiltInKindOrNil BuiltInKind
-	ArgsList         []Args
+	PrimaryOrNil Primary
+	ArgsList     []Args
 }
 
 var _ Atom = (*Call)(nil)
 
-func newCall(isBuiltIn bool, primaryOrNil *Primary, builtInKindOrNil BuiltInKind, argsList []Args) *Call {
+func newCall(primary Primary, argsList []Args) *Call {
 	return &Call{
-		IsBuilinCall:     isBuiltIn,
-		PrimaryOrNil:     primaryOrNil,
-		BuiltInKindOrNil: builtInKindOrNil,
-		ArgsList:         argsList,
+		PrimaryOrNil: primary,
+		ArgsList:     argsList,
 	}
 }
 func (c *Call) Print(depth int) []string {
 	lines := []string{}
 	callStart := "call<"
 	lines = append(lines, LineWithDepth(callStart, depth))
-	builtInInfo := fmt.Sprintf("isBuiltIn: %v", c.IsBuilinCall)
-	lines = append(lines, LineWithDepth(builtInInfo, depth+1))
 	var ce []string
 	toList := func(s string) []string { return []string{s} }
-	if c.IsBuilinCall {
-		switch c.BuiltInKindOrNil {
-		case NewErrorBuild:
-			ce = toList(LineWithDepth("id: newError", depth+1))
-		case ErrStringBuild:
-			ce = toList(LineWithDepth("id: errString", depth+1))
-		case ScanBuild:
-			ce = toList(LineWithDepth("id: scan", depth+1))
-		case PrintBuild:
-			ce = toList(LineWithDepth("id: print", depth+1))
-		case PanicBuild:
-			ce = toList(LineWithDepth("id: panic", depth+1))
-		case LenBuild:
-			ce = toList(LineWithDepth("id: len", depth+1))
-		}
-	} else {
-		primary := c.PrimaryOrNil
-		dummyBuiltIn := fmt.Sprintf("dummyBuiltInValue: %d", c.BuiltInKindOrNil)
-		lines = append(lines, LineWithDepth(dummyBuiltIn, depth+1))
-		switch primary.PrimaryKind {
-		case IdPrimary:
-			ce = toList(LineWithDepth("id: "+(*primary.IdOrNil).String(), depth+1))
-		case ValuePrimary:
-			lines = append(lines, LineWithDepth("valueForm:", depth+1))
-			ce = primary.ValueOrNil.Print(depth + 1)
-		case ExprPrimary:
-			lines = append(lines, LineWithDepth("expr", depth+1))
-			ce = primary.ExprOrNil.Print(depth + 1)
-		}
+	primary := c.PrimaryOrNil
+	switch primary.PrimaryKind {
+	case IdPrimary:
+		ce = toList(LineWithDepth("id: "+(*primary.IdOrNil).String(), depth+1))
+	case ValuePrimary:
+		lines = append(lines, LineWithDepth("valueForm:", depth+1))
+		ce = primary.ValueOrNil.Print(depth + 1)
+	case ExprPrimary:
+		lines = append(lines, LineWithDepth("expr", depth+1))
+		ce = primary.ExprOrNil.Print(depth + 1)
 	}
 
 	lines = append(lines, ce...)

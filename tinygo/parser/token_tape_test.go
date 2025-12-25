@@ -162,11 +162,11 @@ func TestTokenTape_Rollback_Nested(t *testing.T) {
 func TestTokenTape_Peek_Zero(t *testing.T) {
 	tape := newTokenTape(t, "print scan")
 
-	assertToken(t, tape.CurrentToken(), token.PRINT, "print")
+	assertToken(t, tape.CurrentToken(), token.ID, "print")
 
 	// Peek(0)는 현재 토큰과 동일
 	peeked := tape.Peek(0)
-	assertToken(t, peeked, token.PRINT, "print")
+	assertToken(t, peeked, token.ID, "print")
 }
 
 // Test 9: EOF까지 Peek

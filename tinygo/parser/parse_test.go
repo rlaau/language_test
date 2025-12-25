@@ -6,7 +6,7 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/lexer"
 )
 
-func parsePackageForTest(t *testing.T, input string) *Package {
+func parsePackageForTest(t *testing.T, input string) *PackageAST {
 	t.Helper()
 	lx := lexer.NewLexer()
 	lx.Set(input)
@@ -27,8 +27,9 @@ func strPtr(s string) *string {
 }
 
 func idPtr(s string) *Id {
-	id := Id(s)
-	return &id
+	return &Id{
+		Name: s,
+	}
 }
 
 func numPrimary(v int) *Primary {
@@ -55,14 +56,14 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 	tests := []struct {
 		name  string
 		input string
-		want  *Package
+		want  *PackageAST
 	}{
 		{
 			name:  "var_decl",
 			input: "var a int = 10;",
 			want: newPackage([]Decl{
 				newVarDecl(
-					[]Id{"a"},
+					[]Id{*idPtr("a")},
 					Type{TypeKind: IntType},
 					[]Expr{numPrimary(10)},
 				),
@@ -73,8 +74,8 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func add(a int, b int) int { return a + b; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"add",
-					[]Param{{Id: "a", Type: Type{TypeKind: IntType}}, {Id: "b", Type: Type{TypeKind: IntType}}},
+					*idPtr("add"),
+					[]Param{{Id: *idPtr("a"), Type: Type{TypeKind: IntType}}, {Id: *idPtr("b"), Type: Type{TypeKind: IntType}}},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
 						newReturn([]Expr{
@@ -89,14 +90,14 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func testLoop() { for range 10 { print(\"hello\"); } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"testLoop",
+					*idPtr("testLoop"),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
 						newForRangeAexp(
 							numPrimary(10),
 							Block{StmtsOrNil: []Stmt{
-								newCallStmt(*newCall(true, nil, PrintBuild, []Args{
+								newCallStmt(*newCall(*idPrimary("print"), []Args{
 									{strPrimary("hello")},
 								})),
 							}},
@@ -110,12 +111,12 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func main() { a, b := 4, 2; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"main",
+					*idPtr("main"),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
 						newShortDecl(
-							[]Id{"a", "b"},
+							[]Id{*idPtr("a"), *idPtr("b")},
 							[]Expr{numPrimary(4), numPrimary(2)},
 						),
 					}},
@@ -127,8 +128,8 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func test(a int) int { if a == 0 { return 0; } else { return a; } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"test",
-					[]Param{{Id: "a", Type: Type{TypeKind: IntType}}},
+					*idPtr("test"),
+					[]Param{{Id: *idPtr("a"), Type: Type{TypeKind: IntType}}},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
 						newIf(
@@ -150,16 +151,16 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func loop() { for i := 0; i < 10; i = i + 1; { print(i); } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"loop",
+					*idPtr("loop"),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
 						newForWithAssign(
-							*newShortDecl([]Id{"i"}, []Expr{numPrimary(0)}),
+							*newShortDecl([]Id{*idPtr("i")}, []Expr{numPrimary(0)}),
 							newBinary(LessThan, idPrimary("i"), numPrimary(10)),
-							*newAssign([]Id{"i"}, []Expr{newBinary(Plus, idPrimary("i"), numPrimary(1))}),
+							*newAssign([]Id{*idPtr("i")}, []Expr{newBinary(Plus, idPrimary("i"), numPrimary(1))}),
 							Block{StmtsOrNil: []Stmt{
-								newCallStmt(*newCall(true, nil, PrintBuild, []Args{
+								newCallStmt(*newCall(*idPrimary("print"), []Args{
 									{idPrimary("i")},
 								})),
 							}},
@@ -173,12 +174,12 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func fail() error { return newError(\"boom\"); }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"fail",
+					*idPtr("fail"),
 					[]Param{},
 					[]Type{{TypeKind: ErrorType}},
 					Block{StmtsOrNil: []Stmt{
 						newReturn([]Expr{
-							newCall(true, nil, NewErrorBuild, []Args{
+							newCall(*idPrimary("newError"), []Args{
 								{strPrimary("boom")},
 							}),
 						}),
@@ -191,7 +192,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func okt() bool { return true; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"okt",
+					*idPtr("okt"),
 					[]Param{},
 					[]Type{{TypeKind: BoolType}},
 					Block{StmtsOrNil: []Stmt{
@@ -205,7 +206,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "var flag bool",
 			want: newPackage([]Decl{
 				newVarDecl(
-					[]Id{"flag"},
+					[]Id{*idPtr("flag")},
 					Type{TypeKind: BoolType},
 					[]Expr{},
 				),
@@ -216,7 +217,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func pair() (int, error) { return 1, ok; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"pair",
+					*idPtr("pair"),
 					[]Param{},
 					[]Type{{TypeKind: IntType}, {TypeKind: ErrorType}},
 					Block{StmtsOrNil: []Stmt{
@@ -233,12 +234,12 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func count() int { return len(\"abc\"); }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"count",
+					*idPtr("count"),
 					[]Param{},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
 						newReturn([]Expr{
-							newCall(true, nil, LenBuild, []Args{
+							newCall(*idPrimary("len"), []Args{
 								{strPrimary("abc")},
 							}),
 						}),
@@ -251,7 +252,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func calc() int { return 1 + 2 * 3; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"calc",
+					*idPtr("calc"),
 					[]Param{},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
@@ -267,11 +268,11 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func run() { task(1, 2); }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					"run",
+					*idPtr("run"),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
-						newCallStmt(*newCall(false, idPrimary("task"), NewErrorBuild, []Args{
+						newCallStmt(*newCall(*idPrimary("task"), []Args{
 							{numPrimary(1), numPrimary(2)},
 						})),
 					}},

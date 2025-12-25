@@ -57,7 +57,7 @@ Built-in Type과 값 <br>
 - error, strlit // tiny go에서는 error를 타입으로 다룬다.
 - funcion 타입 
 
-타입 긴 연산<br>
+타입 간 연산<br>
 - 서로 다른 타입 간 연산은 불가함
 
 지원하는 연산<br>
@@ -76,22 +76,27 @@ Built-in Type과 값 <br>
 
 ### 실행모델과 스코핑
 - 인터프리터
-- small-step평가
-- call by value 모델
 - main()부터 실행
 - 정적 스코프
 - 패키지 레벨에서 호이스팅 존재, 로컬 블록에선 호이스팅 없음.
+- 호이스팅은 정확히 말하자면, go의 init order임.
 
 ### 에러 모델
 - 에러를 표현, 타입으로 취급함
 - newError를 통해 에러 표현 생성 가능
 - errString을 통해 에러의 문자열 값 가져오기 가능
 
-### 변수 바인딩
-- var 혹은 ":=" 로 변수 선언 시엔, 좌변에 반드시 하나 이상의 새 변수 필요.
+### 선언과 바인딩
+선언
+- 다중 선언의 LHS, RHS는 반드시 일치해야 함. (go-like하진 않지만, tiny go는 개수 일치만 accept함)
+- 초기화가 없는 선언은 zero value로 초기화 된 선언으로 여김.
+- 변수 셰도잉 허용함
+- 단, 빌트인의 셰도잉은 허용하지 않음.
+바인딩
+- var로 변수 선언 시엔, 좌변의 변수들은 반드시 새 변수여야 함.
+- ":=" 로 변수 선언 시엔, 좌변에 반드시 하나 이상의 새 변수 필요.
 - ":=" 는 로컬 블록 내에서만 사용 가능.
 - a, b = 1, 2 식의 동시 할당 및 선언 가능.
-
 ### 표준 환경
 Built in function <br>
 - 모든 빌트인 함수는 사용 시 반드시 호출되어야 하며
@@ -144,7 +149,7 @@ Stmt -> Assign
     |   Block
 Assign -> id {"," id} "=" Expr {"," Expr} End
 CallStmt-> Call End
-Call -> Primary Args {Args} | BuiltInCall
+Call -> Primary Args {Args} (*| BuiltInCall*)
 ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
 Return -> "return" [Expr {"," Expr}] End
 If -> "if" [ShortDecl] Bexp Block ["else" Block ]
@@ -164,7 +169,7 @@ Aexp -> Term { ("+" | "-") Term }
 Term -> Factor { ("*" | "/") Factor } 
 Factor -> ["-"]  Atom
 
-Atom -> Primary {Args} | BuiltInCall //(* Atom = Primary | Call {call이 builtInCall 포함}*)
+Atom -> Primary {Args} (*| BuiltInCall*) //(* Atom = Primary | Call {call이 builtInCall 포함}*)
 Primary -> "(" Expr ")" | id  |  ValueForm
 
 BuiltInCall -> ("newError" | "errString" | "scan" | "print" | "panic" | "len") Args

@@ -8,6 +8,11 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
+var x = 2
+
+var y = 3
+var p, q = 2, p + 2
+
 type Parser struct {
 	tape *TokenTape
 }

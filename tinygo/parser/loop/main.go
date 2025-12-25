@@ -55,8 +55,8 @@ func main() {
 		ps := parser.NewParser(lx)
 		parsed, err := ps.ParsePackage()
 		if err != nil {
-
 			fmt.Printf("error: %v\n", err)
+			printParseErrorLocation(code, ps.CurrentToken().Pos)
 			continue
 		}
 
@@ -103,4 +103,35 @@ func readMultiline(r *bufio.Reader) (string, bool) {
 	}
 
 	return b.String(), true
+}
+
+func printParseErrorLocation(input string, pos int) {
+	if len(input) == 0 {
+		return
+	}
+	caretPos := pos - 1
+	if caretPos < 0 {
+		caretPos = 0
+	}
+	if caretPos > len(input) {
+		caretPos = len(input)
+	}
+
+	lineStart := strings.LastIndex(input[:caretPos], "\n")
+	if lineStart == -1 {
+		lineStart = 0
+	} else {
+		lineStart++
+	}
+	lineEnd := strings.Index(input[caretPos:], "\n")
+	if lineEnd == -1 {
+		lineEnd = len(input)
+	} else {
+		lineEnd = caretPos + lineEnd
+	}
+
+	line := input[lineStart:lineEnd]
+	column := caretPos - lineStart
+	fmt.Println(line)
+	fmt.Println(strings.Repeat(" ", column) + "^ parse error here")
 }

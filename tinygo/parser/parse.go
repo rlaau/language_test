@@ -8,7 +8,7 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
-func (p *Parser) ParsePackage() (*Package, error) {
+func (p *Parser) ParsePackage() (*PackageAST, error) {
 	if !p.CheckProcessable() {
 		return newPackage(nil), nil
 	}
@@ -146,6 +146,7 @@ func (p *Parser) parseStmt() (Stmt, error) {
 		if err == nil {
 			return forRangeAexp, nil
 		}
+
 		rollBack()
 		return p.parseForWithAssign()
 	case token.LBRACE:
@@ -195,16 +196,9 @@ func (p *Parser) parseCall() (*Call, error) {
 		return nil, NewParseError("Call", ErrNotProcesable)
 	}
 
-	rollBack := p.tape.GetRollback()
-
-	builtInCall, err := p.parseBuiltInCall()
-	if err == nil {
-		return builtInCall, nil
-	}
-
-	rollBack()
 	primary, err := p.parsePrimary()
 	if err != nil {
+
 		return nil, NewParseError("Call", err)
 	}
 	argsList := []Args{}
@@ -221,7 +215,7 @@ func (p *Parser) parseCall() (*Call, error) {
 	if len(argsList) == 0 {
 		return nil, NewParseError("Call", errors.New("Call은 Primary이후 하나 이상의 args가 와야 합나디."))
 	}
-	return newCall(false, primary, NewErrorBuild, argsList), nil
+	return newCall(*primary, argsList), nil
 }
 
 func (p *Parser) parseShortDecl() (*ShortDecl, error) {
@@ -442,7 +436,7 @@ func (p *Parser) parseBlock() (*Block, error) {
 		return nil, NewParseError("Block", ErrNotProcesable)
 	}
 	if p.match(token.LBRACE) != nil {
-		return nil, NewParseError("Block", errors.New("맺음 위치에 \"{\" 기호가 존재하지 않음"))
+		return nil, NewParseError("Block", errors.New("시작 위치에 \"{\" 기호가 존재하지 않음"))
 	}
 	stmts := []Stmt{}
 	for {
@@ -451,6 +445,7 @@ func (p *Parser) parseBlock() (*Block, error) {
 		if err != nil {
 
 			rollBack()
+
 			break
 		}
 		stmts = append(stmts, stms)
@@ -650,15 +645,6 @@ func (p *Parser) parseAtom() (Atom, error) {
 		return nil, NewParseError("Atom", ErrNotProcesable)
 	}
 
-	// 빌트인 콜인 경우를 가장 먼저 검사
-	rollBack := p.tape.GetRollback()
-
-	builtInCall, err := p.parseBuiltInCall()
-	if err == nil {
-		return builtInCall, nil
-	}
-	rollBack()
-
 	primary, err := p.parsePrimary()
 	if err != nil {
 		return nil, NewParseError("Atom", err)
@@ -681,44 +667,7 @@ func (p *Parser) parseAtom() (Atom, error) {
 	}
 
 	// args >=1 인 경우 call로 리턴
-	return newCall(false, primary, NewErrorBuild, argsOrZero), nil
-}
-
-func (p *Parser) parseBuiltInCall() (*Call, error) {
-	if !p.CheckProcessable() {
-		return nil, NewParseError("BuiltInCall", ErrNotProcesable)
-	}
-	var builtInSet = map[token.TokenKind]BuiltInKind{
-		token.NEWERROR:  NewErrorBuild,
-		token.ERRSTRING: ErrStringBuild,
-		token.SCAN:      ScanBuild,
-		token.PRINT:     PrintBuild,
-		token.PANIC:     PanicBuild,
-		token.LEN:       LenBuild,
-	}
-	checkIsBuilInToken := func(t token.Token) (BuiltInKind, bool) {
-		builtInKind, ok := builtInSet[t.Kind]
-		return builtInKind, ok
-	}
-	if builtInKind, isBuiltIn := checkIsBuilInToken(p.CurrentToken()); isBuiltIn {
-		p.match(p.CurrentToken().Kind)
-		args, err := p.parseArgs()
-		if err != nil {
-			return nil, NewParseError("BuiltInCall", errors.New("빌트인 함수는 반드시 하나의 인자 세트 받아야 함"))
-		}
-		//* 빌트인 함수는 단 하나의 인자만을 소비함
-		newBuiltInCall := newCall(true, nil, builtInKind, []Args{*args})
-		//빌트인 함수에 하나 이상의 인자 세트를 넣었는지 검사함.
-		rollBack := p.tape.GetRollback()
-		_, err = p.parseArgs()
-		if err == nil {
-			return nil, NewParseError("BuiltInCall", errors.New("빌트인 함수는 단 하나의 인자 셋만을 받음. 연쇄호출 불가"))
-		}
-		rollBack()
-		// 에러가 난 상홍이라면, 빌트인 함수에 단 하나의 인자 세트만이 들어간 상황이라는 뜻이므로 정상 검증 완료.
-		return newBuiltInCall, nil
-	}
-	return nil, NewParseError("BuiltInCall", errors.New("빌트인 키워드에 해당하지 않음"))
+	return newCall(*primary, argsOrZero), nil
 }
 
 // End
