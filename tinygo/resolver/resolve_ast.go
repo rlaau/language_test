@@ -171,8 +171,7 @@ func (r *Resolver) resolveHoistedVarDecl(node *parser.VarDecl, hoist *HoistInfo)
 	//패키지 레벨의 호이스팅된 VarDecl은
 	// 잘 호이스팅 되었나 검사만 함
 	for _, id := range node.Ids {
-		sym := hoist.get(id.Name)
-		if sym == nil {
+		if hoist.getVarDeclById(id.IdId) == nil {
 			return newResolveErr(id, "hoisted symbol not found")
 		}
 	}
@@ -205,8 +204,7 @@ func (r *Resolver) resolveHoistedFuncDecl(node *parser.FuncDecl, hoist *HoistInf
 	// 좌변 먼저 리졸브
 	// But 패키지 레벨 호이스팅된 함수는
 	// 이미 수집되었으므로, 잘 수집되었나 검사만 하.ㅁ
-	sym := hoist.get(node.Id.Name)
-	if sym == nil {
+	if hoist.getFuncDeclById(node.Id.IdId) == nil {
 		return newResolveErr(node.Id, "hoisted symbol not found")
 	}
 

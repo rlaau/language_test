@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/rlaaudgjs5638/langTest/tinygo/parser"
 )
@@ -14,7 +15,7 @@ type InitStep struct {
 
 type InitOrder []InitStep
 
-func BuildInitOrder(pkg *parser.PackageAST, table ResolveTable, hoist *HoistInfo) (InitOrder, error) {
+func BuildInitOrder(table ResolveTable, hoist *HoistInfo) (InitOrder, error) {
 	if hoist == nil {
 		return nil, fmt.Errorf("hoist info is required")
 	}
@@ -26,34 +27,33 @@ func BuildInitOrder(pkg *parser.PackageAST, table ResolveTable, hoist *HoistInfo
 	varInitExpr := map[parser.IdId]parser.Expr{}
 
 	// VarDecl을 분해해 분류 집합을 만든다.
-	for _, decl := range pkg.DeclsOrNil {
-		node, ok := decl.(*parser.VarDecl)
-		if !ok {
-			continue
+	for _, varId := range sortedIds(hoist.varIds()) {
+		decl := hoist.getVarDeclById(varId)
+		if decl == nil {
+			return nil, fmt.Errorf("missing hoisted var decl for id #%d", varId)
 		}
-		if len(node.ExprsOrNil) > 0 && len(node.ExprsOrNil) != len(node.Ids) {
+		if len(decl.ExprsOrNil) > 0 && len(decl.ExprsOrNil) != len(decl.Ids) {
 			return nil, fmt.Errorf("var decl lhs/rhs count mismatch")
 		}
-		if len(node.ExprsOrNil) == 0 {
-			for _, id := range node.Ids {
-				varZeroInit[id.IdId] = true
-			}
+		if len(decl.ExprsOrNil) == 0 {
+			varZeroInit[varId] = true
 			continue
 		}
-		for i, id := range node.Ids {
-			expr := node.ExprsOrNil[i]
-			if exprIsFexp(expr) {
-				varInitFexp[id.IdId] = expr
-				continue
-			}
-			varInitExpr[id.IdId] = expr
+		expr, ok := exprForVarId(decl, varId)
+		if !ok {
+			return nil, fmt.Errorf("var decl entry not found for id #%d", varId)
 		}
+		if exprIsFexp(expr) {
+			varInitFexp[varId] = expr
+			continue
+		}
+		varInitExpr[varId] = expr
 	}
 
 	// varInitExpr가 의존하는 전역 변수/함수/Fexp를 수집한다.
-	varToVarDependency := map[parser.IdId]map[parser.IdId]bool{}  //의존하는 모든 초기화 && 값이 Fexp아닌 varDecl
-	varToFexpDependency := map[parser.IdId]map[parser.IdId]bool{} // 의존하는 모든 초기화 && 값이 Fexp인 VarDecl
-	varToFuncDependency := map[parser.IdId]map[parser.IdId]bool{} // 의존하는 모든 FunclDecl
+	varInitExprToVarInitExprDependency := map[parser.IdId]map[parser.IdId]bool{} //의존하는 모든 초기화 && 값이 Fexp아닌 varDecl
+	varInitExprToVarInitFexpDependency := map[parser.IdId]map[parser.IdId]bool{} // 의존하는 모든 초기화 && 값이 Fexp인 VarDecl
+	varInitExprToFuncDeclDependency := map[parser.IdId]map[parser.IdId]bool{}    // 의존하는 모든 FunclDecl
 	for varId, expr := range varInitExpr {
 		// depVars는 해당 varId의 expr이 의존하는 모든 varDecl임
 		// 이 varDecl은 값이 fexp인 varDecl도 포함. 말 그대로 모든 varDecl임
@@ -70,25 +70,27 @@ func BuildInitOrder(pkg *parser.PackageAST, table ResolveTable, hoist *HoistInfo
 			}
 
 			if varInitFexp[depVar] != nil {
-				addDependency(varToFexpDependency, varId, depVar)
+				addDependency(varInitExprToVarInitFexpDependency, varId, depVar)
 				continue
 			}
 			if varInitExpr[depVar] != nil {
-				addDependency(varToVarDependency, varId, depVar)
+				addDependency(varInitExprToVarInitExprDependency, varId, depVar)
 			}
 		}
 		for depFunc := range depFuncs {
-			addDependency(varToFuncDependency, varId, depFunc)
+			addDependency(varInitExprToFuncDeclDependency, varId, depFunc)
 		}
 	}
 
 	// varInitExpr들에 대해서만 위상정렬한다.
-	order, err := topoSortVars(hoist.varIds(), varInitExpr, varToVarDependency)
+	order, err := topoSortVars(sortedIds(hoist.varIds()), varInitExpr, varInitExprToVarInitExprDependency)
 	if err != nil {
 		return nil, err
 	}
 	// 함수가 어떤 VarDecl에 의존하는지 분석한다.
-	funcToVarDep, err := collectFuncGlobalVarDeps(pkg, table, hoist)
+	//TODO 추후 이부분 최적화
+	// TODO varInitExpr이 의존하는 함수만 체크
+	funcToVarDep, err := collectFuncGlobalVarDeps(table, hoist)
 	if err != nil {
 		return nil, err
 	}
@@ -109,25 +111,25 @@ func BuildInitOrder(pkg *parser.PackageAST, table ResolveTable, hoist *HoistInfo
 	}
 
 	varToCallable := map[parser.IdId]map[parser.IdId]bool{}
-	for varId, funcsDep := range varToFuncDependency {
+	for varId, funcsDep := range varInitExprToFuncDeclDependency {
 		for funcId := range funcsDep {
 			addDependency(varToCallable, varId, funcId)
 		}
 	}
-	for varId, fexpsDep := range varToFexpDependency {
+	for varId, fexpsDep := range varInitExprToVarInitFexpDependency {
 		for fexpId := range fexpsDep {
 			addDependency(varToCallable, varId, fexpId)
 		}
 	}
 
 	// varInitExpr <-> callable 간 순환 차단
-	if err := detectVarCallableCycle(varToCallable, callableToVar, varToVarDependency); err != nil {
+	if err := detectVarCallableCycle(varToCallable, callableToVar, varInitExprToVarInitExprDependency); err != nil {
 		return nil, err
 	}
 
 	initOrder := InitOrder{}
 	// zero-init은 항상 먼저
-	for idId := range varZeroInit {
+	for _, idId := range sortedIdsFromMap(varZeroInit) {
 		initOrder = append(initOrder, InitStep{
 			VarId:     idId,
 			ExprOrNil: nil,
@@ -136,10 +138,8 @@ func BuildInitOrder(pkg *parser.PackageAST, table ResolveTable, hoist *HoistInfo
 	}
 
 	// fexp init은 zero-init 다음
-	for varId, fexp := range varInitFexp {
-		if fexp == nil {
-			continue
-		}
+	for _, varId := range sortedIdsFromMapExpr(varInitFexp) {
+		fexp := varInitFexp[varId]
 		initOrder = append(initOrder, InitStep{
 			VarId:     varId,
 			ExprOrNil: fexp,
@@ -157,6 +157,32 @@ func BuildInitOrder(pkg *parser.PackageAST, table ResolveTable, hoist *HoistInfo
 	return initOrder, nil
 }
 
+func (o InitOrder) Print(hoist *HoistInfo) string {
+	if len(o) == 0 {
+		return "<empty>"
+	}
+	lines := make([]string, 0, len(o)+1)
+	lines = append(lines, "InitOrder:")
+	for i, step := range o {
+		name := "<missing>"
+		if hoist != nil {
+			if sym := hoist.getById(step.VarId); sym != nil {
+				name = sym.name
+			}
+		}
+		kind := "expr"
+		if step.ZeroInit {
+			kind = "zero"
+		} else if step.ExprOrNil == nil {
+			kind = "fexp"
+		}
+		lines = append(lines, fmt.Sprintf("%d) #%d %s (%s)", i+1, step.VarId, name, kind))
+	}
+	return parser.JoinLines(lines)
+}
+
+
+
 func exprIsFexp(expr parser.Expr) bool {
 	primary, ok := expr.(*parser.Primary)
 	if !ok {
@@ -166,6 +192,19 @@ func exprIsFexp(expr parser.Expr) bool {
 		return false
 	}
 	return primary.ValueOrNil.ValueKind == parser.FexpValue
+}
+
+func exprForVarId(decl *parser.VarDecl, id parser.IdId) (parser.Expr, bool) {
+	for i, vid := range decl.Ids {
+		if vid.IdId != id {
+			continue
+		}
+		if i >= len(decl.ExprsOrNil) {
+			return nil, false
+		}
+		return decl.ExprsOrNil[i], true
+	}
+	return nil, false
 }
 
 // expr이 의존중인 idId를 모두 수합해서 리턴
@@ -331,12 +370,12 @@ func walkStmtRefs(stmt parser.Stmt, table ResolveTable, hoist *HoistInfo, vars, 
 	return nil
 }
 
-func collectFuncGlobalVarDeps(pkg *parser.PackageAST, table ResolveTable, hoist *HoistInfo) (map[parser.IdId]map[parser.IdId]bool, error) {
+func collectFuncGlobalVarDeps(table ResolveTable, hoist *HoistInfo) (map[parser.IdId]map[parser.IdId]bool, error) {
 	funcToVar := map[parser.IdId]map[parser.IdId]bool{}
-	for _, decl := range pkg.DeclsOrNil {
-		fn, ok := decl.(*parser.FuncDecl)
-		if !ok {
-			continue
+	for _, funcId := range hoist.funcIds() {
+		fn := hoist.getFuncDeclById(funcId)
+		if fn == nil {
+			return nil, fmt.Errorf("missing hoisted func decl for id #%d", funcId)
 		}
 		vars := map[parser.IdId]bool{}
 		funcs := map[parser.IdId]bool{}
@@ -468,7 +507,7 @@ func topoSortVars(varOrder []parser.IdId, varInitExpr map[parser.IdId]parser.Exp
 		state[id] = 1
 		// 체인에 올린 상태로 의존성 목록에 대해 의존성 사이클 체크
 		// 가장 끄트머리에 있는 의존이, 재귀 함수 하에서 가장 먼저 결과에 append
-		for dep := range varToVarDeps[id] {
+		for _, dep := range sortedIdsFromMap(varToVarDeps[id]) {
 			if err := visit(dep); err != nil {
 				return err
 			}
@@ -495,4 +534,35 @@ func addDependency[T comparable](deps map[T]map[T]bool, from, to T) {
 		deps[from] = map[T]bool{}
 	}
 	deps[from][to] = true
+}
+
+func sortedIds(ids []parser.IdId) []parser.IdId {
+	out := make([]parser.IdId, len(ids))
+	copy(out, ids)
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
+}
+
+func sortedIdsFromMap(m map[parser.IdId]bool) []parser.IdId {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make([]parser.IdId, 0, len(m))
+	for id := range m {
+		out = append(out, id)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
+}
+
+func sortedIdsFromMapExpr(m map[parser.IdId]parser.Expr) []parser.IdId {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make([]parser.IdId, 0, len(m))
+	for id := range m {
+		out = append(out, id)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
+	return out
 }

@@ -55,15 +55,22 @@ func main() {
 			printParseErrorLocation(code, ps.CurrentToken().Pos)
 			continue
 		}
-		fmt.Printf(parsed.String())
+		fmt.Println(parsed.String())
 		rs := resolver.NewResolver()
-		table, _, rerr := rs.ResolvePackage(parsed)
+		table, hoist, rerr := rs.ResolvePackage(parsed)
+		fmt.Println(table.Print())
 		if rerr != nil {
 			fmt.Printf("resolve error: %v\n", rerr)
 			continue
 		}
 
-		fmt.Println(table.Print())
+		fmt.Println(hoist.Print())
+		initOrder, ierr := resolver.BuildInitOrder(table, hoist)
+		if ierr != nil {
+			fmt.Printf("initOrder error: %v\n", ierr)
+			continue
+		}
+		fmt.Println(initOrder.Print(hoist))
 	}
 }
 
