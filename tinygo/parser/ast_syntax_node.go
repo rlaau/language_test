@@ -165,47 +165,23 @@ func (p Param) String() string {
 	return "<" + p.Id.String() + "," + p.Type.String() + ">"
 }
 
-// AST 쪽: "의미"만 가진다.
 type Id struct {
-	Name   string
-	Symbol *Symbol // resolver가 채움 (또는 SymID만)
+	Name string
+	IdId IdId
 }
+type IdId int64
 
-// 선언(의미의 정체)
-type Symbol struct {
-	//ID는 논리적 동일성의 기준
-	// 모든 변수에 대해 고유해야 하고, 불변해야 함
-	ID   uint32
-	Name string //디버깅 위해서 Name 정보 역시 들고 감.
-	Kind SymbolKind
-}
-
-type SymbolKind uint8
-
-const (
-	SymVar SymbolKind = iota
-	SymFunc
-	SymType
-	SymBuiltin // builtin은 따로 둬도 됨
-)
-
-func newId(token token.Token) *Id {
+func newId(token token.Token, idId IdId) *Id {
 	value := string(token.Value)
 
 	return &Id{
-		Name:   value,
-		Symbol: nil,
+		Name: value,
+		IdId: idId,
 	}
 }
 func (i Id) String() string {
-	if i.Symbol != nil {
-		builtIn := ""
-		if i.Symbol.Kind == SymBuiltin {
-			builtIn = ":builtIn"
-		}
-		return i.Name + "-#" + strconv.Itoa(int(i.Symbol.ID)) + builtIn
-	}
-	return i.Name + "-NotBound"
+
+	return i.Name + "(#" + strconv.Itoa(int(i.IdId)) + ")"
 }
 
 type Type struct {

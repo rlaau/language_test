@@ -20,7 +20,6 @@ func (lx *Lexer) Set(s string) {
 	lx.input = s
 }
 
-
 // Next는 현재 위치에서의 토큰을 리턴한 후, 다음 위치로 렉서의 포지션을 옮긴다.
 func (lx *Lexer) Next() token.Token {
 	// 공백을 제거하면 "문자"와 맞닿게 된다.
@@ -87,8 +86,10 @@ func (lx *Lexer) Next() token.Token {
 	}
 	if _, isStartOfOmit := isOmitStart(string(lx.currentByte())); isStartOfOmit {
 		_, _ = lx.readIf(string(lx.currentByte()), isOmitStart)
-		if _, isEndOfOmit := lx.readIf(string(lx.currentByte()), isOmitEnd); isEndOfOmit {
-			return token.NewToken(token.OMIT, lx.currentPosition)
+		if !lx.isOvered() {
+			if _, isEndOfOmit := lx.readIf(string(lx.currentByte()), isOmitEnd); isEndOfOmit {
+				return token.NewToken(token.OMIT, lx.currentPosition)
+			}
 		}
 		rollBack()
 	}
@@ -113,16 +114,22 @@ func (lx *Lexer) Next() token.Token {
 		}
 		return token.ILLLEGAL, false
 	}
+	// 일단 \"를 만난 이상 반드시 다음 \"가 존재해야 하며, 그 사이의 strlit을 리턴해야 한다.
 	if _, isEdgeOfStrlit := lx.readIf(string(lx.currentByte()), isStrEdge); isEdgeOfStrlit {
 		isInnerOfStrlit := func(b byte) bool { _, isStr := isStrEdge(string(b)); return !isStr }
 		candidate := lx.readWhile(isInnerOfStrlit)
-		if _, isStrEdge2 := lx.readIf(string(lx.currentByte()), isStrEdge); isStrEdge2 {
-			strlitToken := token.NewToken(token.STRLIT, lx.currentPosition)
-			// STRLT은 따옴표 제거한 "내부 문자" 만 토큰 값으로 넣는다.
-			strlitToken.SetValue(string(candidate))
-			return strlitToken
+		if !lx.isOvered() {
+			if _, isStrEdge2 := lx.readIf(string(lx.currentByte()), isStrEdge); isStrEdge2 {
+				strlitToken := token.NewToken(token.STRLIT, lx.currentPosition)
+				// STRLT은 따옴표 제거한 "내부 문자" 만 토큰 값으로 넣는다.
+				strlitToken.SetValue(string(candidate))
+				return strlitToken
+			}
+			// 끝맺는 자리에 \"가 없다면 에러 리턴
+			return token.NewToken(token.ILLLEGAL, lx.currentPosition)
 		}
-		rollBack()
+		// 끝맺는 \"를 만나지 못하고 overd된 경우엔 Illefal 리턴
+		return token.NewToken(token.ILLLEGAL, lx.currentPosition)
 	}
 	// 이제 6,7 케이스가 남는다.
 	// 6 케이스 검사

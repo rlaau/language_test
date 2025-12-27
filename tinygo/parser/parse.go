@@ -843,7 +843,7 @@ func (p *Parser) parseId() (*Id, error) {
 		return nil, NewParseError("Id", ErrNotProcesable)
 	}
 	if p.tape.CurrentToken().Kind == token.ID {
-		id := newId(p.tape.CurrentToken())
+		id := newId(p.tape.CurrentToken(), p.idIdCounter.GetNextID())
 		p.match(token.ID)
 		return id, nil
 	}

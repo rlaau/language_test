@@ -8,21 +8,39 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/token"
 )
 
-var x = 2
-
-var y = 3
-var p, q = 2, p + 2
-
 type Parser struct {
-	tape *TokenTape
+	tape        *TokenTape
+	idIdCounter *idCounter
+}
+type idCounter struct {
+	currentID IdId
 }
 
-func NewParser(l *lexer.Lexer) *Parser {
-	tokenTape := NewTokenTape(l)
-	return &Parser{
-		tape: tokenTape,
+func (ic *idCounter) GetNextID() IdId {
+	ic.currentID += 1
+	return ic.currentID
+}
+func (ic *idCounter) ViewCurrentId() IdId {
+	return ic.currentID
+}
+func (ic *idCounter) SetCurrentId(idId IdId) {
+	ic.currentID = idId
+}
+func newIdCounter(startWith IdId) *idCounter {
+	return &idCounter{
+		currentID: startWith,
 	}
 }
+func NewParser(l *lexer.Lexer) *Parser {
+	tokenTape := NewTokenTape(l)
+	p := &Parser{
+		tape:        tokenTape,
+		idIdCounter: newIdCounter(-1),
+	}
+	tokenTape.SetParser(p)
+	return p
+}
+
 func (p *Parser) CurrentToken() token.Token {
 	return p.tape.CurrentToken()
 }

@@ -8,6 +8,7 @@ import (
 
 type TokenTape struct {
 	lexer       *lexer.Lexer
+	parser      *Parser
 	tokenRecord []token.Token
 	currentIdx  int
 }
@@ -20,6 +21,9 @@ func NewTokenTape(l *lexer.Lexer) *TokenTape {
 		tokenRecord: []token.Token{initToken},
 		currentIdx:  0,
 	}
+}
+func (t *TokenTape) SetParser(p *Parser) {
+	t.parser = p
 }
 
 // 현재 토큰 보기
@@ -66,7 +70,11 @@ func (t *TokenTape) isNextNTokensExistOnRecord(n int) bool {
 // GetRollback은 호출 시, 지금 마킹한 시점의 위치로 복귀할 수 있는, 함수를 제공한다.
 func (t *TokenTape) GetRollback() func() {
 	memorizedPosition := t.currentIdx
+	//id카운터도 테이프에 맞게 롤백됨.
+	//id카운터가 정상작동했다면, 다음에 부여받을 id가 뭐였을지 기억
+	currentIdId := t.parser.idIdCounter.ViewCurrentId()
 	return func() {
 		t.currentIdx = memorizedPosition
+		t.parser.idIdCounter.SetCurrentId(currentIdId)
 	}
 }

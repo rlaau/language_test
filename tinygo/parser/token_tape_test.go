@@ -12,7 +12,13 @@ func newTokenTape(t *testing.T, input string) *TokenTape {
 	t.Helper()
 	lx := lexer.NewLexer()
 	lx.Set(input)
-	return NewTokenTape(lx)
+	tape := NewTokenTape(lx)
+	p := &Parser{
+		tape:        tape,
+		idIdCounter: newIdCounter(-1),
+	}
+	tape.SetParser(p)
+	return tape
 }
 
 // 헬퍼: 토큰 검증

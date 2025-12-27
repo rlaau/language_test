@@ -26,9 +26,10 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func idPtr(s string) *Id {
+func idPtr(s string, idId int64) *Id {
 	return &Id{
 		Name: s,
+		IdId: IdId(idId),
 	}
 }
 
@@ -48,8 +49,8 @@ func okPrimary() *Primary {
 	return newPrimary(ValuePrimary, nil, nil, newValueForm(ErrValue, nil, nil, nil, nil, nil))
 }
 
-func idPrimary(s string) *Primary {
-	return newPrimary(IdPrimary, nil, idPtr(s), nil)
+func idPrimary(s string, idid int64) *Primary {
+	return newPrimary(IdPrimary, nil, idPtr(s, idid), nil)
 }
 
 func TestParser_ParsePackage_Table(t *testing.T) {
@@ -63,7 +64,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "var a int = 10;",
 			want: newPackage([]Decl{
 				newVarDecl(
-					[]Id{*idPtr("a")},
+					[]Id{*idPtr("a", 0)},
 					Type{TypeKind: IntType},
 					[]Expr{numPrimary(10)},
 				),
@@ -74,12 +75,12 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func add(a int, b int) int { return a + b; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("add"),
-					[]Param{{Id: *idPtr("a"), Type: Type{TypeKind: IntType}}, {Id: *idPtr("b"), Type: Type{TypeKind: IntType}}},
+					*idPtr("add", 0),
+					[]Param{{Id: *idPtr("a", 1), Type: Type{TypeKind: IntType}}, {Id: *idPtr("b", 2), Type: Type{TypeKind: IntType}}},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
 						newReturn([]Expr{
-							newBinary(Plus, idPrimary("a"), idPrimary("b")),
+							newBinary(Plus, idPrimary("a", 3), idPrimary("b", 4)),
 						}),
 					}},
 				),
@@ -90,14 +91,14 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func testLoop() { for range 10 { print(\"hello\"); } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("testLoop"),
+					*idPtr("testLoop", 0),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
 						newForRangeAexp(
 							numPrimary(10),
 							Block{StmtsOrNil: []Stmt{
-								newCallStmt(*newCall(*idPrimary("print"), []Args{
+								newCallStmt(*newCall(*idPrimary("print", 1), []Args{
 									{strPrimary("hello")},
 								})),
 							}},
@@ -111,12 +112,12 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func main() { a, b := 4, 2; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("main"),
+					*idPtr("main", 0),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
 						newShortDecl(
-							[]Id{*idPtr("a"), *idPtr("b")},
+							[]Id{*idPtr("a", 1), *idPtr("b", 2)},
 							[]Expr{numPrimary(4), numPrimary(2)},
 						),
 					}},
@@ -128,18 +129,18 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func test(a int) int { if a == 0 { return 0; } else { return a; } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("test"),
-					[]Param{{Id: *idPtr("a"), Type: Type{TypeKind: IntType}}},
+					*idPtr("test", 0),
+					[]Param{{Id: *idPtr("a", 1), Type: Type{TypeKind: IntType}}},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
 						newIf(
 							nil,
-							newBinary(Equal, idPrimary("a"), numPrimary(0)),
+							newBinary(Equal, idPrimary("a", 2), numPrimary(0)),
 							Block{StmtsOrNil: []Stmt{
 								newReturn([]Expr{numPrimary(0)}),
 							}},
 							&Block{StmtsOrNil: []Stmt{
-								newReturn([]Expr{idPrimary("a")}),
+								newReturn([]Expr{idPrimary("a", 3)}),
 							}},
 						),
 					}},
@@ -151,17 +152,17 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func loop() { for i := 0; i < 10; i = i + 1; { print(i); } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("loop"),
+					*idPtr("loop", 0),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
 						newForWithAssign(
-							*newShortDecl([]Id{*idPtr("i")}, []Expr{numPrimary(0)}),
-							newBinary(LessThan, idPrimary("i"), numPrimary(10)),
-							*newAssign([]Id{*idPtr("i")}, []Expr{newBinary(Plus, idPrimary("i"), numPrimary(1))}),
+							*newShortDecl([]Id{*idPtr("i", 1)}, []Expr{numPrimary(0)}),
+							newBinary(LessThan, idPrimary("i", 2), numPrimary(10)),
+							*newAssign([]Id{*idPtr("i", 3)}, []Expr{newBinary(Plus, idPrimary("i", 4), numPrimary(1))}),
 							Block{StmtsOrNil: []Stmt{
-								newCallStmt(*newCall(*idPrimary("print"), []Args{
-									{idPrimary("i")},
+								newCallStmt(*newCall(*idPrimary("print", 5), []Args{
+									{idPrimary("i", 6)},
 								})),
 							}},
 						),
@@ -174,12 +175,12 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func fail() error { return newError(\"boom\"); }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("fail"),
+					*idPtr("fail", 0),
 					[]Param{},
 					[]Type{{TypeKind: ErrorType}},
 					Block{StmtsOrNil: []Stmt{
 						newReturn([]Expr{
-							newCall(*idPrimary("newError"), []Args{
+							newCall(*idPrimary("newError", 1), []Args{
 								{strPrimary("boom")},
 							}),
 						}),
@@ -192,7 +193,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func okt() bool { return true; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("okt"),
+					*idPtr("okt", 0),
 					[]Param{},
 					[]Type{{TypeKind: BoolType}},
 					Block{StmtsOrNil: []Stmt{
@@ -206,7 +207,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "var flag bool",
 			want: newPackage([]Decl{
 				newVarDecl(
-					[]Id{*idPtr("flag")},
+					[]Id{*idPtr("flag", 0)},
 					Type{TypeKind: BoolType},
 					[]Expr{},
 				),
@@ -217,7 +218,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func pair() (int, error) { return 1, ok; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("pair"),
+					*idPtr("pair", 0),
 					[]Param{},
 					[]Type{{TypeKind: IntType}, {TypeKind: ErrorType}},
 					Block{StmtsOrNil: []Stmt{
@@ -234,12 +235,12 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func count() int { return len(\"abc\"); }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("count"),
+					*idPtr("count", 0),
 					[]Param{},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
 						newReturn([]Expr{
-							newCall(*idPrimary("len"), []Args{
+							newCall(*idPrimary("len", 1), []Args{
 								{strPrimary("abc")},
 							}),
 						}),
@@ -252,7 +253,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func calc() int { return 1 + 2 * 3; }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("calc"),
+					*idPtr("calc", 0),
 					[]Param{},
 					[]Type{{TypeKind: IntType}},
 					Block{StmtsOrNil: []Stmt{
@@ -268,11 +269,11 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 			input: "func run() { task(1, 2); }",
 			want: newPackage([]Decl{
 				newFuncDecl(
-					*idPtr("run"),
+					*idPtr("run", 0),
 					[]Param{},
 					[]Type{},
 					Block{StmtsOrNil: []Stmt{
-						newCallStmt(*newCall(*idPrimary("task"), []Args{
+						newCallStmt(*newCall(*idPrimary("task", 1), []Args{
 							{numPrimary(1), numPrimary(2)},
 						})),
 					}},
