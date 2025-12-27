@@ -204,7 +204,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 		},
 		{
 			name:  "var_decl_no_assign",
-			input: "var flag bool",
+			input: "var flag bool;",
 			want: newPackage([]Decl{
 				newVarDecl(
 					[]Id{*idPtr("flag", 0)},

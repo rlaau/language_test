@@ -27,7 +27,7 @@ func TestResolveHoist_SuccessForwardRefs(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, _, err := resolveFromInput(t, tc.input)
+			_, _, _, err := resolveFromInput(t, tc.input)
 			if err != nil {
 				t.Fatalf("unexpected resolve error: %v", err)
 			}

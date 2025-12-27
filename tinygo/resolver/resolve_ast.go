@@ -4,21 +4,19 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/parser"
 )
 
-type InitOrder []parser.IdId
-
-func (r *Resolver) ResolvePackage(pkg *parser.PackageAST) (ResolveTable, InitOrder, error) {
+func (r *Resolver) ResolvePackage(pkg *parser.PackageAST) (ResolveTable, *HoistInfo, error) {
 	// 패키지 레벨의 선언은 호이스팅함
 	hoist, err := r.collectPackageDecls(pkg)
 	if err != nil {
 		return r.table, nil, err
 	}
 	for _, decl := range pkg.DeclsOrNil {
-		//호이스팅된 정보를 가지고 DFS식 리졸빙 시작
+		// 호이스팅된 정보를 가지고 DFS식 리졸빙 시작
 		if err := r.resolveDeclWithHoist(decl, hoist); err != nil {
 			return r.table, nil, err
 		}
 	}
-	return r.table, nil, nil
+	return r.table, hoist, nil
 }
 
 // 패키지 레벨의 선언은 호이스팅됨

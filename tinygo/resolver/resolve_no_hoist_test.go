@@ -7,7 +7,7 @@ import (
 	"github.com/rlaaudgjs5638/langTest/tinygo/parser"
 )
 
-func resolveFromInput(t *testing.T, input string) (*parser.PackageAST, ResolveTable, error) {
+func resolveFromInput(t *testing.T, input string) (*parser.PackageAST, ResolveTable, *HoistInfo, error) {
 	t.Helper()
 	lx := lexer.NewLexer()
 	lx.Set(input)
@@ -17,8 +17,8 @@ func resolveFromInput(t *testing.T, input string) (*parser.PackageAST, ResolveTa
 		t.Fatalf("parse error: %v", err)
 	}
 	rs := NewResolver()
-	table, _, rerr := rs.ResolvePackage(pkg)
-	return pkg, table, rerr
+	table, hoist, rerr := rs.ResolvePackage(pkg)
+	return pkg, table, hoist, rerr
 }
 
 func TestResolveNoHoist_SuccessCases(t *testing.T) {
@@ -58,7 +58,7 @@ func TestResolveNoHoist_SuccessCases(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, _, err := resolveFromInput(t, tc.input)
+			_, _, _, err := resolveFromInput(t, tc.input)
 			if err != nil {
 				t.Fatalf("unexpected resolve error: %v", err)
 			}
@@ -108,7 +108,7 @@ func TestResolveNoHoist_FailureCases(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, _, err := resolveFromInput(t, tc.input)
+			_, _, _, err := resolveFromInput(t, tc.input)
 			if err == nil {
 				t.Fatalf("expected resolve error but got nil")
 			}
@@ -118,7 +118,7 @@ func TestResolveNoHoist_FailureCases(t *testing.T) {
 
 func TestResolveNoHoist_ResolvedKinds(t *testing.T) {
 	input := "var a int = 1; func f(){ a = 2; print(a); }"
-	pkg, table, err := resolveFromInput(t, input)
+	pkg, table, _, err := resolveFromInput(t, input)
 	if err != nil {
 		t.Fatalf("unexpected resolve error: %v", err)
 	}

@@ -3,17 +3,35 @@ package resolver
 import "github.com/rlaaudgjs5638/langTest/tinygo/parser"
 
 type HoistInfo struct {
-	globals map[string]*Symbol
+	globalsByName map[string]*Symbol
+	globalsById   map[parser.IdId]*Symbol
+	// 선언 순서대로 수집
+	// var간 초기화 순서는 추후 initOrder에서 보장함
+	varOrder  []parser.IdId
+	funcOrder []parser.IdId
 }
 
 func newHoistInfo() *HoistInfo {
 	return &HoistInfo{
-		globals: map[string]*Symbol{},
+		globalsByName: map[string]*Symbol{},
+		globalsById:   map[parser.IdId]*Symbol{},
 	}
 }
 
 func (h *HoistInfo) get(name string) *Symbol {
-	return h.globals[name]
+	return h.globalsByName[name]
+}
+
+func (h *HoistInfo) getById(id parser.IdId) *Symbol {
+	return h.globalsById[id]
+}
+
+func (h *HoistInfo) varIds() []parser.IdId {
+	return h.varOrder
+}
+
+func (h *HoistInfo) funcIds() []parser.IdId {
+	return h.funcOrder
 }
 
 func (r *Resolver) collectPackageDecls(pkg *parser.PackageAST) (*HoistInfo, error) {
@@ -28,7 +46,9 @@ func (r *Resolver) collectPackageDecls(pkg *parser.PackageAST) (*HoistInfo, erro
 				if err != nil {
 					return nil, newResolveErr(id, err.Error())
 				}
-				hoist.globals[id.Name] = sym
+				hoist.globalsByName[id.Name] = sym
+				hoist.globalsById[id.IdId] = sym
+				hoist.varOrder = append(hoist.varOrder, id.IdId)
 				r.setResolved(id, r.refFromSymbol(sym))
 			}
 		case *parser.FuncDecl:
@@ -36,7 +56,9 @@ func (r *Resolver) collectPackageDecls(pkg *parser.PackageAST) (*HoistInfo, erro
 			if err != nil {
 				return nil, newResolveErr(node.Id, err.Error())
 			}
-			hoist.globals[node.Id.Name] = sym
+			hoist.globalsByName[node.Id.Name] = sym
+			hoist.globalsById[node.Id.IdId] = sym
+			hoist.funcOrder = append(hoist.funcOrder, node.Id.IdId)
 			r.setResolved(node.Id, r.refFromSymbol(sym))
 		}
 	}

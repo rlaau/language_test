@@ -68,6 +68,9 @@ func (p *Parser) parseVarDecl() (*VarDecl, error) {
 
 	if p.match(token.ASSIGN) != nil {
 		//varDecl에서 명시적인 Expr을 할당하지 않은경우
+		if p.match(token.SEMICOLON) != nil {
+			return nil, NewParseError("VarDecl", ErrMissingSemicolon)
+		}
 		return newVarDecl(ids, *typ, []Expr{}), nil
 	}
 	exprs, err := p.parseExprListLongerThan0()
