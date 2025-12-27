@@ -87,16 +87,28 @@ func BuildInitOrder(table ResolveTable, hoist *HoistInfo) (InitOrder, error) {
 	if err != nil {
 		return nil, err
 	}
-	// 함수가 어떤 VarDecl에 의존하는지 분석한다.
-	//TODO 추후 이부분 최적화
-	// TODO varInitExpr이 의존하는 함수만 체크
-	funcToVarDep, err := collectFuncGlobalVarDeps(table, hoist)
+	// varInitExpr이 의존하는 callable만 대상으로 분석한다.
+	referencedFuncs := map[parser.IdId]bool{}
+	referencedFexps := map[parser.IdId]bool{}
+	for _, deps := range varInitExprToFuncDeclDependency {
+		for funcId := range deps {
+			referencedFuncs[funcId] = true
+		}
+	}
+	for _, deps := range varInitExprToVarInitFexpDependency {
+		for fexpId := range deps {
+			referencedFexps[fexpId] = true
+		}
+	}
+
+	// 의존이 확정된 함수가 어떤 VarDecl에 의존하는지 분석한다.
+	funcToVarDep, err := collectFuncGlobalVarDeps(table, hoist, referencedFuncs)
 	if err != nil {
 		return nil, err
 	}
 
-	// Fexp VarDecl이 어떤 VarDecl에 의존하는지 분석한다.
-	fexpToVarDep, err := collectFexpGlobalVarDeps(varInitFexp, table, hoist)
+	// 의존이 확정된 Fexp VarDecl이 어떤 VarDecl에 의존하는지 분석한다.
+	fexpToVarDep, err := collectFexpGlobalVarDeps(varInitFexp, table, hoist, referencedFexps)
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +192,6 @@ func (o InitOrder) Print(hoist *HoistInfo) string {
 	}
 	return parser.JoinLines(lines)
 }
-
-
 
 func exprIsFexp(expr parser.Expr) bool {
 	primary, ok := expr.(*parser.Primary)
@@ -370,9 +380,12 @@ func walkStmtRefs(stmt parser.Stmt, table ResolveTable, hoist *HoistInfo, vars, 
 	return nil
 }
 
-func collectFuncGlobalVarDeps(table ResolveTable, hoist *HoistInfo) (map[parser.IdId]map[parser.IdId]bool, error) {
+func collectFuncGlobalVarDeps(table ResolveTable, hoist *HoistInfo, filter map[parser.IdId]bool) (map[parser.IdId]map[parser.IdId]bool, error) {
 	funcToVar := map[parser.IdId]map[parser.IdId]bool{}
 	for _, funcId := range hoist.funcIds() {
+		if len(filter) > 0 && !filter[funcId] {
+			continue
+		}
 		fn := hoist.getFuncDeclById(funcId)
 		if fn == nil {
 			return nil, fmt.Errorf("missing hoisted func decl for id #%d", funcId)
@@ -389,9 +402,12 @@ func collectFuncGlobalVarDeps(table ResolveTable, hoist *HoistInfo) (map[parser.
 	return funcToVar, nil
 }
 
-func collectFexpGlobalVarDeps(varInitFexp map[parser.IdId]parser.Expr, table ResolveTable, hoist *HoistInfo) (map[parser.IdId]map[parser.IdId]bool, error) {
+func collectFexpGlobalVarDeps(varInitFexp map[parser.IdId]parser.Expr, table ResolveTable, hoist *HoistInfo, filter map[parser.IdId]bool) (map[parser.IdId]map[parser.IdId]bool, error) {
 	fexpToVar := map[parser.IdId]map[parser.IdId]bool{}
 	for varId, expr := range varInitFexp {
+		if len(filter) > 0 && !filter[varId] {
+			continue
+		}
 		block := fexpBlockFromExpr(expr)
 		if block == nil {
 			continue
