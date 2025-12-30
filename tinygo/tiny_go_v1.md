@@ -1,8 +1,11 @@
-## Tiny Go v1
-### 목표
+# Tiny Go v1
+
+## 목표
+
 - go로 인터프리팅 되는 go 언어를 만들어 보자
 
-### 예시
+## 예시
+
 ```go
 func main(){
     a, b := 4, 2
@@ -49,24 +52,27 @@ func digitToString(i int) string {
 
 ```
 
-### 타입과 값
-Built-in Type과 값 <br>
+## 타입과 값
+
+Built-in Type과 값
+
 - int, number
 - bool, true | false
 - string, strlit
 - error, strlit // tiny go에서는 error를 타입으로 다룬다.
-- funcion 타입 
+- funcion 타입
 
-타입 간 연산<br>
+타입 간 연산
+
 - 서로 다른 타입 간 연산은 불가함
 
-지원하는 연산<br>
+지원하는 연산
+
 - int : 이항연산, 단항연산, 비교연산
 - bool: 일치연산, 논리연산
 - string : 일치연산, +
 - error : 일치연산
 - function 타입 : 연산 제공하지 않음
-
 
 - 이항연산 : +, -, *, /
 - 단항연산 : -
@@ -74,22 +80,28 @@ Built-in Type과 값 <br>
 - 비교연산 : 일치연산, <, <=, >, >=
 - 논리연산 : &&, ||, !
 
-### 실행모델과 스코핑
+## 실행모델과 스코핑
+
 - 인터프리터
 - main()부터 실행
 - 정적 스코프
 - 패키지 레벨에서 호이스팅 존재, 로컬 블록에선 호이스팅 없음.
 - 호이스팅은 정확히 말하자면, go의 init order임.
 
-### 에러 모델
+## 에러 모델
+
 - 에러를 표현, 타입으로 취급함
 - newError를 통해 에러 표현 생성 가능
 - errString을 통해 에러의 문자열 값 가져오기 가능
 
-### 선언, 할당, 바인딩
+## 선언, 할당, 바인딩
+
 선언
-- 다중 선언의 LHS, RHS는 반드시 일치해야 함. (go-like하진 않지만, tiny go는 개수 일치만 accept함)
+
+- 다중 선언의 LHS, RHS는 반드시 일치해야 함.
+(go-like하진 않지만, tiny go는 개수 일치만 accept함)
 - 초기화가 없는 선언은 zero value로 초기화 된 선언으로 여김.
+(각 타입의 zero-value는 go와 동일함.)
 - 변수 셰도잉 허용함
 - 단, 빌트인의 셰도잉은 허용하지 않음.
 - 함수 매개변수의 중복을 허용하지 않음. (func (a int, a string) 불가)
@@ -100,11 +112,15 @@ Built-in Type과 값 <br>
 - ":=" 로 변수 선언 시엔, 좌변에 반드시 하나 이상의 새 변수 필요.
 - ":=" 는 로컬 블록 내에서만 사용 가능.
 - a, b = 1, 2 식의 동시 할당 및 선언 가능.
-### 표준 환경
-Built in function <br>
+
+## 표준 환경
+
+Built in function
+
 - 모든 빌트인 함수는 사용 시 반드시 호출되어야 하며
 - 호출 시 결과값으로 다른 함수를 리턴하지 않음. (연쇄 호출 불가)
 - 구문법 상으롣, 빌트인 함수는 바로 앞 하나의 괄호에 묶인 인자 리스트만을 가져감.
+
 ```go
     func newError(s string) error   // string 표현을 strlit으로 변환 후 error value로 리턴
     func errString(e error) string  // error의 strlit value를 string으로 리턴
@@ -113,13 +129,16 @@ Built in function <br>
     func print(Expr)    // stdout에 string 타입의 Expr 출력
     func panic(Lexp)    // 프로그램 전체에 panic 전파
 ```
-Predefine Operator <br>
+
+Predefine Operator
+
 - +, -, *, /
 - -
 - == , != , <, <=, >, >=
 - &&, ||, !
 
-### 구문법 (EBNF)
+## 구문법 (EBNF)
+
 ```ocaml
 Package -> {Decl}
 
@@ -147,6 +166,7 @@ Stmt -> Assign
     |   VarDecl
     |   FuncDecl
     |   Return
+    |   Break
     |   If
     |   For
     |   Block
@@ -155,11 +175,11 @@ CallStmt-> Call End
 Call -> Primary Args {Args} (*| BuiltInCall*)
 ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
 Return -> "return" [Expr {"," Expr}] End
+Break -> "break" End
 If -> "if" [ShortDecl] Bexp Block ["else" Block ]
 
 For ->  "for" Bexp Block
     |   "for" ShortDecl Bexp End id "=" Expr End Block 
-    |   "for" "range" Aexp Block
 Block -> "{" {Stmt} "}"
 
 

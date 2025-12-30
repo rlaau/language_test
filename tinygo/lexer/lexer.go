@@ -158,7 +158,7 @@ func (lx *Lexer) Next() token.Token {
 	//나머지 경우엔 올바른 토큰이 존재하지 않는다고 볼 수 있다.
 	rollBack()
 	fmt.Printf("lexer position %d, lexer current string %s \n", lx.currentPosition, string(lx.currentByte()))
-	panic("매칭되는 토큰이 존재하지 않음.")
+	return token.NewToken(token.ILLLEGAL, lx.currentPosition)
 }
 
 // readIf는 받은 candidate가 isToken함수가 반환하는 키워드 집합에 속한 문자열일 시,

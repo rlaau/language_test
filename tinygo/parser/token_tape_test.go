@@ -74,31 +74,12 @@ func TestTokenTape_Peek_NextToken(t *testing.T) {
 	assertToken(t, tape.CurrentToken(), token.IF, "if") // 현재 토큰 변화 없음
 }
 
-// Test 4: Peek(n) - 여러 칸 앞 미리보기
-func TestTokenTape_Peek_Multiple(t *testing.T) {
-	tape := newTokenTape(t, "for x in range")
-
-	// 현재: for
-	assertToken(t, tape.CurrentToken(), token.FOR, "for")
-
-	// Peek(2): in
-	peeked2 := tape.Peek(2)
-	assertToken(t, peeked2, token.IN, "in")
-
-	// Peek(3): range
-	peeked3 := tape.Peek(3)
-	assertToken(t, peeked3, token.RANGE, "range")
-
-	// 현재 토큰은 여전히 for
-	assertToken(t, tape.CurrentToken(), token.FOR, "for")
-}
-
 // Test 5: Peek 후 MoveToNextToken - 레코드 재사용
 func TestTokenTape_Peek_Then_Move(t *testing.T) {
-	tape := newTokenTape(t, "let a = 5")
+	tape := newTokenTape(t, "var a = 5")
 
-	// 현재: let
-	assertToken(t, tape.CurrentToken(), token.LET, "let")
+	// 현재: var
+	assertToken(t, tape.CurrentToken(), token.VAR, "var")
 
 	// Peek(1)로 미리 읽기
 	tape.Peek(1)

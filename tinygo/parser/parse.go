@@ -137,17 +137,14 @@ func (p *Parser) parseStmt() (Stmt, error) {
 		return p.parseFuncDecl()
 	case token.RETURN:
 		return p.parseReturn()
+	case token.BREAK:
+		return p.parseBreak()
 	case token.IF:
 		return p.parseIf()
 	case token.FOR:
 		forBexp, err := p.parseForBexp()
 		if err == nil {
 			return forBexp, nil
-		}
-		rollBack()
-		forRangeAexp, err := p.parseForRangeAexp()
-		if err == nil {
-			return forRangeAexp, nil
 		}
 
 		rollBack()
@@ -318,7 +315,19 @@ func (p *Parser) parseReturn() (*Return, error) {
 	}
 	return newReturn(exprs), nil
 }
+func (p *Parser) parseBreak() (*Break, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Break", ErrNotProcesable)
+	}
+	if p.match(token.BREAK) != nil {
+		return nil, NewParseError("Break", errors.New("Break doesnt't match to \"break\""))
+	}
+	if p.match(token.SEMICOLON) != nil {
+		return nil, NewParseError("Break", ErrMissingSemicolon)
+	}
+	return newBreak(), nil
 
+}
 func (p *Parser) parseIf() (*If, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("If", ErrNotProcesable)
@@ -413,27 +422,6 @@ func (p *Parser) parseForWithAssign() (*ForWithAssign, error) {
 	return newForWithAssign(*shortDecl, bexp, *assign, *block), nil
 }
 
-func (p *Parser) parseForRangeAexp() (*ForRangeAexp, error) {
-	if !p.CheckProcessable() {
-		return nil, NewParseError("ForRangeAexp", ErrNotProcesable)
-	}
-	if p.match(token.FOR) != nil {
-		return nil, NewParseError("ForRangeAexp", errors.New("for키워드 누락"))
-	}
-
-	if p.match(token.RANGE) != nil {
-		return nil, NewParseError("ForRangeAexp", errors.New("range키워드 누락"))
-	}
-	aexp, err := p.parseAexp()
-	if err != nil {
-		return nil, NewParseError("ForRangeAexp", err)
-	}
-	block, err := p.parseBlock()
-	if err != nil {
-		return nil, NewParseError("ForRangeAexp", err)
-	}
-	return newForRangeAexp(aexp, *block), nil
-}
 func (p *Parser) parseBlock() (*Block, error) {
 	if !p.CheckProcessable() {
 		return nil, NewParseError("Block", ErrNotProcesable)

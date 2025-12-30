@@ -21,7 +21,6 @@ func main() {
 		fmt.Println("\n(CTRL+C) 종료합니다. bye")
 		os.Exit(0)
 	}()
-
 	in := bufio.NewReader(os.Stdin)
 	fmt.Println("---------------------------")
 	fmt.Println("|  Welcome tiny go RRPL   |")

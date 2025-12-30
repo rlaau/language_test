@@ -401,6 +401,26 @@ func (r *Return) Stmt() string {
 	return r.String()
 }
 
+type Break struct {
+	isItBreak bool
+}
+
+var _ Stmt = (*Break)(nil)
+
+func newBreak() *Break {
+	return &Break{isItBreak: true}
+}
+func (b *Break) Print(depth int) []string {
+	line := LineWithDepth("Break(true)", depth)
+	return []string{line}
+}
+func (b *Break) String() string {
+	return JoinLines(b.Print(0))
+}
+func (b *Break) Stmt() string {
+	return b.String()
+}
+
 // stmt
 type If struct {
 	ShortDeclOrNil *ShortDecl
@@ -518,37 +538,6 @@ func (f *ForWithAssign) String() string {
 	return JoinLines(f.Print(0))
 }
 func (f *ForWithAssign) Stmt() string {
-	return f.String()
-}
-
-// stmt
-type ForRangeAexp struct {
-	Aexp  Expr
-	Block Block
-}
-
-func newForRangeAexp(aexp Expr, block Block) *ForRangeAexp {
-	return &ForRangeAexp{
-		Aexp:  aexp,
-		Block: block,
-	}
-}
-
-var _ Stmt = (*ForRangeAexp)(nil)
-
-func (f *ForRangeAexp) Print(depth int) []string {
-	lines := []string{}
-	lines = append(lines, LineWithDepth("For(", depth))
-	lines = append(lines, f.Aexp.Print(depth+1)...)
-	lines = append(lines, LineWithDepth("times do", depth+1))
-	lines = append(lines, f.Block.Print(depth+1)...)
-	lines = append(lines, LineWithDepth(")", depth))
-	return lines
-}
-func (f *ForRangeAexp) String() string {
-	return JoinLines(f.Print(0))
-}
-func (f *ForRangeAexp) Stmt() string {
 	return f.String()
 }
 

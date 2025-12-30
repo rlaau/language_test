@@ -86,27 +86,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 				),
 			}),
 		},
-		{
-			name:  "for_range_print",
-			input: "func testLoop() { for range 10 { print(\"hello\"); } }",
-			want: newPackage([]Decl{
-				newFuncDecl(
-					*idPtr("testLoop", 0),
-					[]Param{},
-					[]Type{},
-					Block{StmtsOrNil: []Stmt{
-						newForRangeAexp(
-							numPrimary(10),
-							Block{StmtsOrNil: []Stmt{
-								newCallStmt(*newCall(*idPrimary("print", 1), []Args{
-									{strPrimary("hello")},
-								})),
-							}},
-						),
-					}},
-				),
-			}),
-		},
+
 		{
 			name:  "short_decl",
 			input: "func main() { a, b := 4, 2; }",
@@ -149,7 +129,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 		},
 		{
 			name:  "for_with_assign",
-			input: "func loop() { for i := 0; i < 10; i = i + 1; { print(i); } }",
+			input: "func loop() { for i := 0; i < 10; i = i + 1; { print(i); break; } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
 					*idPtr("loop", 0),
@@ -164,7 +144,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 								newCallStmt(*newCall(*idPrimary("print", 5), []Args{
 									{idPrimary("i", 6)},
 								})),
-							}},
+								newBreak()}},
 						),
 					}},
 				),

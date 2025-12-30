@@ -369,11 +369,7 @@ func walkStmtRefs(stmt parser.Stmt, table ResolveTable, hoist *HoistInfo, vars, 
 			}
 		}
 		return walkBlockRefs(node.Block, table, hoist, vars, funcs)
-	case *parser.ForRangeAexp:
-		if err := walkExprRefs(node.Aexp, table, hoist, vars, funcs); err != nil {
-			return err
-		}
-		return walkBlockRefs(node.Block, table, hoist, vars, funcs)
+
 	case *parser.Block:
 		return walkBlockRefs(*node, table, hoist, vars, funcs)
 	}

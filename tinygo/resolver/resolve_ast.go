@@ -1,6 +1,8 @@
 package resolver
 
 import (
+	"errors"
+
 	"github.com/rlaaudgjs5638/langTest/tinygo/parser"
 )
 
@@ -45,19 +47,20 @@ func (r *Resolver) resolveStmt(stmt parser.Stmt) error {
 		return r.resolveFuncDecl(node)
 	case *parser.Return:
 		return r.resolveReturn(node)
+	case *parser.Break:
+		return r.resolveBreak(node)
 	case *parser.If:
 		return r.resolveIf(node)
 	case *parser.ForBexp:
 		return r.resolveForBexp(node)
 	case *parser.ForWithAssign:
 		return r.resolveForWithAssign(node)
-	case *parser.ForRangeAexp:
-		return r.resolveForRangeAexp(node)
+
 	case *parser.Block:
 		// 그냥 블록 시엔 새 스코프
 		return r.resolveBlock(*node, false)
 	default:
-		return nil
+		return errors.New("resolveStmt: 스위치 미스매치")
 	}
 }
 
@@ -297,7 +300,9 @@ func (r *Resolver) resolveReturn(node *parser.Return) error {
 	}
 	return nil
 }
-
+func (r *Resolver) resolveBreak(node *parser.Break) error {
+	return nil
+}
 func (r *Resolver) resolveIf(node *parser.If) error {
 	r.pushScope()
 	defer r.popScope()
@@ -346,17 +351,6 @@ func (r *Resolver) resolveForWithAssign(node *parser.ForWithAssign) error {
 		return err
 	}
 	if err := r.resolveAssign(&node.Assign); err != nil {
-		return err
-	}
-	// for역시 블록과 스코프 분리
-	return r.resolveBlock(node.Block, false)
-}
-
-func (r *Resolver) resolveForRangeAexp(node *parser.ForRangeAexp) error {
-	r.pushScope()
-	defer r.popScope()
-
-	if err := r.resolveExpr(node.Aexp); err != nil {
 		return err
 	}
 	// for역시 블록과 스코프 분리

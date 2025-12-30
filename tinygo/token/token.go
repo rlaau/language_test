@@ -40,11 +40,7 @@ const (
 
 	// for 키워드
 	FOR
-	RANGE
-
-	// let 키워드
-	LET
-	IN
+	BREAK
 
 	END_OF_KEYWORD
 )
@@ -147,13 +143,8 @@ func StringSpec(t TokenKind) string {
 
 	case FOR:
 		return "for"
-	case RANGE:
-		return "range"
-
-	case LET:
-		return "let"
-	case IN:
-		return "in"
+	case BREAK:
+		return "break"
 
 	case ID:
 		return ""
