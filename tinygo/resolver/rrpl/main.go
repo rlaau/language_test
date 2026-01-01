@@ -55,7 +55,7 @@ func main() {
 			continue
 		}
 		fmt.Println(parsed.String())
-		table, hoist, initOrder, rerr := resolver.Resolve(parsed)
+		table, hoist, initOrder, _, rerr := resolver.Resolve(parsed)
 		if rerr != nil {
 			fmt.Printf("resolve error: %v\n", rerr)
 			continue

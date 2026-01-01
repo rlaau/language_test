@@ -47,6 +47,22 @@ func (h *HoistInfo) funcIds() []parser.IdId {
 	return h.funcOrder
 }
 
+func (h *HoistInfo) GetVarDeclById(id parser.IdId) *parser.VarDecl {
+	return h.getVarDeclById(id)
+}
+
+func (h *HoistInfo) GetFuncDeclById(id parser.IdId) *parser.FuncDecl {
+	return h.getFuncDeclById(id)
+}
+
+func (h *HoistInfo) VarIds() []parser.IdId {
+	return h.varIds()
+}
+
+func (h *HoistInfo) FuncIds() []parser.IdId {
+	return h.funcIds()
+}
+
 func (h *HoistInfo) Print() string {
 	if h == nil {
 		return "<nil hoist>"

@@ -79,14 +79,8 @@ func (r *Resolver) preludeBuiltins() {
 			idNodeId: parser.IdId(-1),
 			// 빌트인은 전역 슬롯에 위치하지 않음
 			// Eval과정에서 빌트인 전용 환경의
-			// builtInEnv.Slot (=[r.builtIns[name]])에
+			// builtins.Slot (=[r.builtIns[name]])에
 			// 해당 빌트인을 삽입할 것임
-			// 또한, 빌트인 리졸빙 시에는
-			// slot값이 r.builtIns[name]이 되도록 해서
-			// 이 코드와 합치되도록 하였음
-			// Eval단계에선, 빌트인 만날 시에
-			// 전역 스코프가 아닌, 빌트인 스코프에서
-			// 해당 리졸브의 slot을 찾아서 적용하면 됨.
 			slot:  -1,
 			scope: r.global,
 		}
