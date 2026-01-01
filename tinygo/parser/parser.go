@@ -10,24 +10,24 @@ import (
 
 type Parser struct {
 	tape        *TokenTape
-	idIdCounter *idCounter
+	idIdCounter *idIdCounter
 }
-type idCounter struct {
+type idIdCounter struct {
 	currentID IdId
 }
 
-func (ic *idCounter) GetNextID() IdId {
+func (ic *idIdCounter) GetNextID() IdId {
 	ic.currentID += 1
 	return ic.currentID
 }
-func (ic *idCounter) ViewCurrentId() IdId {
+func (ic *idIdCounter) ViewCurrentId() IdId {
 	return ic.currentID
 }
-func (ic *idCounter) SetCurrentId(idId IdId) {
+func (ic *idIdCounter) SetCurrentId(idId IdId) {
 	ic.currentID = idId
 }
-func newIdCounter(startWith IdId) *idCounter {
-	return &idCounter{
+func newIdCounter(startWith IdId) *idIdCounter {
+	return &idIdCounter{
 		currentID: startWith,
 	}
 }

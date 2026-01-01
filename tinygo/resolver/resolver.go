@@ -60,16 +60,18 @@ func NewResolver() *Resolver {
 	return r
 }
 
+var Builtins = []string{
+	"newError",
+	"errString",
+	"len",
+	"scan",
+	"print",
+	"panic",
+}
+
 func (r *Resolver) preludeBuiltins() {
-	builtins := []string{
-		"newError",
-		"errString",
-		"len",
-		"scan",
-		"print",
-		"panic",
-	}
-	for i, name := range builtins {
+
+	for i, name := range Builtins {
 		r.builtins[name] = i
 		r.global.symbols[name] = &Symbol{
 			name:     name,
