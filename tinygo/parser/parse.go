@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -139,6 +140,8 @@ func (p *Parser) parseStmt() (Stmt, error) {
 		return p.parseReturn()
 	case token.BREAK:
 		return p.parseBreak()
+	case token.CONTINUE:
+		return p.parseContinue()
 	case token.IF:
 		return p.parseIf()
 	case token.FOR:
@@ -326,6 +329,19 @@ func (p *Parser) parseBreak() (*Break, error) {
 		return nil, NewParseError("Break", ErrMissingSemicolon)
 	}
 	return newBreak(), nil
+}
+
+func (p *Parser) parseContinue() (*Continue, error) {
+	if !p.CheckProcessable() {
+		return nil, NewParseError("Continue", ErrNotProcesable)
+	}
+	if p.match(token.CONTINUE) != nil {
+		return nil, NewParseError("Continue", fmt.Errorf("Continue doesn't match to \"continue\""))
+	}
+	if p.match(token.SEMICOLON) != nil {
+		return nil, NewParseError("Continue", ErrMissingSemicolon)
+	}
+	return newContinue(), nil
 
 }
 func (p *Parser) parseIf() (*If, error) {

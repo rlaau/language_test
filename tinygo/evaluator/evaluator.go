@@ -146,9 +146,14 @@ func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, i
 			// ZeroInit이 아니라면, ExprOrNil은 nil값이 아니여야 함.
 			return nil, fmt.Errorf("missing init expr for var")
 		}
-		values, err := e.Valuate(step.ExprOrNil)
+		values, ctrlSigOrNil, err := e.Valuate(step.ExprOrNil)
 		if err != nil {
 			return nil, fmt.Errorf("init expr evaluation failed")
+		}
+		if ctrlSigOrNil != nil {
+			if ctrlSigOrNil.Kind == CtrlPanic {
+				return nil, fmt.Errorf("panic during hoisting: %s", ctrlSigOrNil.Values[0].Inspect())
+			}
 		}
 		if len(values) != 1 {
 			// 이 부분은 리졸버에 근거함.

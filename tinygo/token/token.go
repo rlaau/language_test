@@ -41,6 +41,7 @@ const (
 	// for 키워드
 	FOR
 	BREAK
+	CONTINUE
 
 	END_OF_KEYWORD
 )
@@ -145,6 +146,8 @@ func StringSpec(t TokenKind) string {
 		return "for"
 	case BREAK:
 		return "break"
+	case CONTINUE:
+		return "continue"
 
 	case ID:
 		return ""

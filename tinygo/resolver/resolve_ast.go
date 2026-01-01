@@ -49,6 +49,8 @@ func (r *Resolver) resolveStmt(stmt parser.Stmt) error {
 		return r.resolveReturn(node)
 	case *parser.Break:
 		return r.resolveBreak(node)
+	case *parser.Continue:
+		return r.resolveContinue(node)
 	case *parser.If:
 		return r.resolveIf(node)
 	case *parser.ForBexp:
@@ -300,7 +302,10 @@ func (r *Resolver) resolveReturn(node *parser.Return) error {
 	}
 	return nil
 }
-func (r *Resolver) resolveBreak(node *parser.Break) error {
+func (r *Resolver) resolveBreak(_ *parser.Break) error {
+	return nil
+}
+func (r *Resolver) resolveContinue(_ *parser.Continue) error {
 	return nil
 }
 func (r *Resolver) resolveIf(node *parser.If) error {

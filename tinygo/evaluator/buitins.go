@@ -119,11 +119,7 @@ var builtinRegistry = map[string]BuiltinFunc{
 			if !ok {
 				return nil, nil, fmt.Errorf("panic expects string")
 			}
-			signal := &ControlSignal{
-				Kind:   CtrlPanic,
-				Values: args,
-			}
-			return nil, signal, nil
+			return nil, newPanicSignal(args), nil
 		},
 	},
 }

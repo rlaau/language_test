@@ -129,7 +129,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 		},
 		{
 			name:  "for_with_assign",
-			input: "func loop() { for i := 0; i < 10; i = i + 1; { print(i); break; } }",
+			input: "func loop() { for i := 0; i < 10; i = i + 1; { continue; print(i); break; } }",
 			want: newPackage([]Decl{
 				newFuncDecl(
 					*idPtr("loop", 0),
@@ -141,6 +141,7 @@ func TestParser_ParsePackage_Table(t *testing.T) {
 							newBinary(LessThan, idPrimary("i", 2), numPrimary(10)),
 							*newAssign([]Id{*idPtr("i", 3)}, []Expr{newBinary(Plus, idPrimary("i", 4), numPrimary(1))}),
 							Block{StmtsOrNil: []Stmt{
+								newContinue(),
 								newCallStmt(*newCall(*idPrimary("print", 5), []Args{
 									{idPrimary("i", 6)},
 								})),

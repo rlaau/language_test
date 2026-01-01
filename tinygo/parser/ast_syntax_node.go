@@ -421,6 +421,28 @@ func (b *Break) Stmt() string {
 	return b.String()
 }
 
+type Continue struct {
+	isItContinue bool
+}
+
+var _ Stmt = (*Continue)(nil)
+
+func newContinue() *Continue {
+	return &Continue{isItContinue: true}
+}
+
+func (c *Continue) Print(depth int) []string {
+	line := LineWithDepth("Continue(true)", depth)
+	return []string{line}
+}
+
+func (c *Continue) String() string {
+	return JoinLines(c.Print(0))
+}
+func (c *Continue) Stmt() string {
+	return c.String()
+}
+
 // stmt
 type If struct {
 	ShortDeclOrNil *ShortDecl
@@ -491,7 +513,7 @@ func (f *ForBexp) Print(depth int) []string {
 	lines = append(lines, LineWithDepth(fs, depth))
 	lines = append(lines, LineWithDepth("while", depth+1))
 	lines = append(lines, f.Bexp.Print(depth+1)...)
-	lines = append(lines, f.Bexp.Print(depth+1)...)
+	lines = append(lines, f.Block.Print(depth+1)...)
 	lines = append(lines, LineWithDepth(")", depth))
 	return lines
 }

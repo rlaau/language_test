@@ -167,6 +167,7 @@ Stmt -> Assign
     |   FuncDecl
     |   Return
     |   Break
+    |   Continue
     |   If
     |   For
     |   Block
@@ -176,6 +177,7 @@ Call -> Primary Args {Args} (*| BuiltInCall*)
 ShortDecl-> id {"," id } ":=" Expr {"," Expr } End
 Return -> "return" [Expr {"," Expr}] End
 Break -> "break" End
+Continue -> "continue" End
 If -> "if" [ShortDecl] Bexp Block ["else" Block ]
 
 For ->  "for" Bexp Block
