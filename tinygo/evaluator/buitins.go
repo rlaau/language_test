@@ -44,7 +44,7 @@ var builtinRegistry = map[string]BuiltinFunc{
 			if !ok {
 				return nil, nil, fmt.Errorf("newError expects string")
 			}
-			return []Value{newErrorVal(str.Value)}, nil, nil
+			return []Value{newErrorVal(&str.Value)}, nil, nil
 		},
 	},
 	"errString": {

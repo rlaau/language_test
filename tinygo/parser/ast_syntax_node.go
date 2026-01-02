@@ -773,7 +773,7 @@ type ValueForm struct {
 	NumberOrNil  *int
 	BoolOrNil    *bool
 	StrLitOrNil  *string
-	ErrOrOkOrNil *string
+	ErrOrNilIfOk *string
 	FexpOrNil    *Fexp
 }
 
@@ -783,7 +783,7 @@ func newValueForm(valueKind ValueType, numberOrNil *int, boolOrNil *bool, strLit
 		NumberOrNil:  numberOrNil,
 		BoolOrNil:    boolOrNil,
 		StrLitOrNil:  strLitOrNil,
-		ErrOrOkOrNil: errOrOkOrNil,
+		ErrOrNilIfOk: errOrOkOrNil,
 		FexpOrNil:    fexoOrNil,
 	}
 }
@@ -802,10 +802,10 @@ func (v *ValueForm) Print(depth int) []string {
 		return ss("strlit: " + *v.StrLitOrNil)
 	case ErrValue:
 		var errString string
-		if v.ErrOrOkOrNil == nil {
+		if v.ErrOrNilIfOk == nil {
 			errString = "<OK>" //* ok값의 error는 nil포인터로 값을 담는다.
 		} else {
-			errString = *v.ErrOrOkOrNil
+			errString = *v.ErrOrNilIfOk
 		}
 		return ss("error: " + errString)
 	case FexpValue:
@@ -854,6 +854,7 @@ const (
 	Or  = BinaryKind(token.OR)
 )
 
+// Expr
 type Call struct {
 	PrimaryOrNil Primary
 	ArgsList     []Args

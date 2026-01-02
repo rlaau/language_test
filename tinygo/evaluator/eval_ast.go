@@ -20,8 +20,9 @@ func (e *Evaluator) EvalCallStmt(callStmt parser.CallStmt) (*ControlSignal, erro
 	//함수는 빌트인 함수를 구별해서 빌트인 레지스트리 or 환경에서 찾기
 	panic("not implemented")
 }
-func (e *Evaluator) EvalBlock(block parser.Block) (*ControlSignal, error) {
+func (e *Evaluator) EvalBlock(block parser.Block, reuseCurrentEnv bool) (*ControlSignal, error) {
 	// 아무 제어도 없다면 *ControlSyntax==nil
+	//reuseCurrent시엔 env pop,push없이 현재의 env재사용
 	panic("not implemented")
 }
 func (e *Evaluator) EvalIf(ifNode parser.If) (*ControlSignal, error) {

@@ -16,7 +16,7 @@ var ZeroValueForType = func(t parser.Type) Value {
 	case parser.StringType:
 		return newStringVal("")
 	case parser.ErrorType:
-		return newOkErrorVal()
+		return newErrorVal(nil)
 	case parser.FuncionType:
 		return newClosureVal(nil, nil, nil, parser.Block{}, nil)
 	default:
@@ -27,7 +27,9 @@ var ZeroValueForType = func(t parser.Type) Value {
 // 이렇게 Value 인터페이스 기준으로 값 모델링을 해 두면
 // 추후 Slice, Mape, Chan등의 런타임 구조체를 추가 시에
 // 이들이 Object 인터페이스만 충족시키게 한 후에
-// 별도 구조체 런타임 구조체로써 작동하게 할 수 있음
+// 별도 런타임 구조체로써 작동하게 할 수 있음
+// ex: type Slice sturct{len:int, cap:int, array:[]T{}}이후
+// ex: 이게 Value인터페이스 만족시키게 하면, 이 호스트의 표현을 값처럼 들고 다니기가 가능함.
 type Value interface {
 	Kind() ValueKind
 	Inspect() string
@@ -93,11 +95,12 @@ type ErrorValue struct {
 	ErrMsg string
 }
 
-func newOkErrorVal() *ErrorValue {
-	return &ErrorValue{IsOk: true}
-}
-func newErrorVal(msg string) *ErrorValue {
-	return &ErrorValue{IsOk: false, ErrMsg: msg}
+// newErrorVal은 msg의 nil체크로 해당 에러가 ok 값인지 아닌지 검사함
+func newErrorVal(msg *string) *ErrorValue {
+	if msg == nil {
+		return &ErrorValue{IsOk: true, ErrMsg: ""}
+	}
+	return &ErrorValue{IsOk: false, ErrMsg: *msg}
 }
 func (e *ErrorValue) Kind() ValueKind {
 	return ErrKind
@@ -114,16 +117,16 @@ type ClosureValue struct {
 	Params      []parser.Param
 	ReturnTypes []parser.Type
 	Block       parser.Block
-	Env         *EnvFrame // captured env
+	ParentEnv   *EnvFrame // captured env
 }
 
-func newClosureVal(idOrNil *parser.Id, params []parser.Param, returnTypes []parser.Type, block parser.Block, env *EnvFrame) *ClosureValue {
+func newClosureVal(idOrNil *parser.Id, params []parser.Param, returnTypes []parser.Type, block parser.Block, parentEnv *EnvFrame) *ClosureValue {
 	return &ClosureValue{
 		IdOrNil:     idOrNil,
 		Params:      params,
 		ReturnTypes: returnTypes,
 		Block:       block,
-		Env:         env,
+		ParentEnv:   parentEnv,
 	}
 }
 func (c *ClosureValue) Kind() ValueKind {
