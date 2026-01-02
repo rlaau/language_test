@@ -13,7 +13,6 @@ type Evaluator struct {
 
 	//Evaluator는 callFrame, envFrame 둘 다 들고 있음
 	currentEnvFrame  *EnvFrame
-	currentCallFrame *CallFrame
 
 	// 빌트인 함수값들
 	builtInSlots []Value
@@ -86,7 +85,6 @@ func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, i
 		resolveTable:     resolveTable,
 		currentEnvFrame:  globalEnv,
 		builtInSlots:     []Value{},
-		currentCallFrame: nil,
 		debug:            false,
 	}
 	//4. 빌트인 레지스트리 생성. resolver가 제공한 builtins를 사용
@@ -168,17 +166,6 @@ func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, i
 	return e, nil
 }
 
-type CallFrame struct {
-	funcIdOrNil     *parser.Id
-	ParentCallFrame *CallFrame
-}
-
-func (cf *CallFrame) String() string {
-	if cf.funcIdOrNil == nil {
-		return "callFrame" + "anonymous func"
-	}
-	return "callFrame:" + cf.funcIdOrNil.String()
-}
 
 type EnvFrame struct {
 	Slots          []Value // SLot에 따른 Value
@@ -193,11 +180,6 @@ func (e *Evaluator) EvalMainFunc() error {
 	panic("not implemented")
 }
 
-func (e *Evaluator) pushCallFrame(f *CallFrame) {
-	f.ParentCallFrame = e.currentCallFrame
-	e.currentCallFrame = f
-}
-func (e *Evaluator) popCallFrame() { e.currentCallFrame = e.currentCallFrame.ParentCallFrame }
 
 func (e *Evaluator) pushEnvFrame(ef *EnvFrame) {
 	ef.ParentEnvFrame = e.currentEnvFrame
