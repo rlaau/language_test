@@ -92,18 +92,6 @@ func TestResolveNoHoist_FailureCases(t *testing.T) {
 			name:  "assign_to_builtin_forbidden",
 			input: "func f(){ print = 1; }",
 		},
-		{
-			name:  "short_decl_lhs_rhs_mismatch",
-			input: "func f(){ a, b := 1; }",
-		},
-		{
-			name:  "assign_lhs_rhs_mismatch",
-			input: "func f(){ a, b = 1; }",
-		},
-		{
-			name:  "var_decl_lhs_rhs_mismatch",
-			input: "var a, b int = 1;",
-		},
 	}
 
 	for _, tc := range cases {

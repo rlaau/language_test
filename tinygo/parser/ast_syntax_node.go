@@ -38,7 +38,8 @@ func (p *PackageAST) String() string {
 	return JoinLines(p.Print(0))
 }
 
-// Decl
+// Decl 
+// Stmt
 type VarDecl struct {
 	Ids        []Id
 	Type       Type
@@ -94,6 +95,7 @@ func (v *VarDecl) Stmt() string {
 }
 
 // Decl
+// Stmt
 type FuncDecl struct {
 	Id               Id
 	ParamsOrNil      []Param
@@ -401,6 +403,7 @@ func (r *Return) Stmt() string {
 	return r.String()
 }
 
+// Stmt
 type Break struct {
 	isItBreak bool
 }
@@ -421,6 +424,7 @@ func (b *Break) Stmt() string {
 	return b.String()
 }
 
+// Stmt
 type Continue struct {
 	isItContinue bool
 }

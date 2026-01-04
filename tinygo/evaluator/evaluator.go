@@ -12,7 +12,8 @@ type Evaluator struct {
 	resolveTable resolver.ResolveTable
 
 	//Evaluator는 callFrame, envFrame 둘 다 들고 있음
-	currentEnvFrame  *EnvFrame
+	callStack      CallStack
+	globalEnvFrame *EnvFrame
 
 	// 빌트인 함수값들
 	builtInSlots []Value
@@ -20,6 +21,21 @@ type Evaluator struct {
 	debug bool
 }
 
+// CallStack은 함수 호출마다 새로 생성되는 EnvList를 보관하는 자료구조임
+type CallStack struct{ callStack []*EnvFrame }
+
+func (cs *CallStack) peekEnvOfLastCallFrame() *EnvFrame {
+	return cs.callStack[len(cs.callStack)-1]
+}
+func (cs *CallStack) pushCallFrame(ef *EnvFrame) {
+	cs.callStack = append(cs.callStack, ef)
+}
+func (cs *CallStack) popCallFrame() {
+	cs.callStack = cs.callStack[0 : len(cs.callStack)-1]
+}
+func (cs *CallStack) setEnvOfLastCallFrame(ef *EnvFrame) {
+	cs.callStack[len(cs.callStack)-1] = ef
+}
 func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, initOrder resolver.InitOrder, resolveTable resolver.ResolveTable, builtins map[string]int) (*Evaluator, error) {
 
 	hoistedFuncDecls := []*parser.FuncDecl{}
@@ -81,11 +97,14 @@ func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, i
 
 	//3. Evaluator생성
 	e := &Evaluator{
-		packageAST:       packageAst,
-		resolveTable:     resolveTable,
-		currentEnvFrame:  globalEnv,
-		builtInSlots:     []Value{},
-		debug:            false,
+		packageAST:   packageAst,
+		resolveTable: resolveTable,
+		callStack: CallStack{
+			callStack: []*EnvFrame{globalEnv},
+		},
+		globalEnvFrame: globalEnv,
+		builtInSlots:   []Value{},
+		debug:          false,
 	}
 	//4. 빌트인 레지스트리 생성. resolver가 제공한 builtins를 사용
 	e.builtInSlots = make([]Value, maxBuiltinSlot(builtins)+1)
@@ -166,7 +185,6 @@ func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, i
 	return e, nil
 }
 
-
 type EnvFrame struct {
 	Slots          []Value // SLot에 따른 Value
 	ParentEnvFrame *EnvFrame
@@ -176,16 +194,69 @@ func (e *Evaluator) EvalMainFunc() error {
 	// 1. main함수의 시그니처 검사하기
 	// 2. env에서 main함수 꺼내서 호출
 	// 3 . 평가 시엔 env의 스코핑&슬롯 규칙이 리졸버와 동일할 것. 그리고 ref가 빌트인일 시 빌트인 참조할 것.
-	// 4 . block성공적으로 평가되면 return nil
-	panic("not implemented")
-}
 
+	var mainDecl *parser.FuncDecl
+	for _, decl := range e.packageAST.DeclsOrNil {
+		fn, ok := decl.(*parser.FuncDecl)
+		if !ok {
+			continue
+		}
+		if fn.Id.Name == "main" {
+			mainDecl = fn
+			break
+		}
+	}
+	if mainDecl == nil {
+		return fmt.Errorf("missing main function")
+	}
+	if len(mainDecl.ParamsOrNil) != 0 || len(mainDecl.ReturnTypesOrNil) != 0 {
+		return fmt.Errorf("main must have signature func()")
+	}
+
+	mainVal, err := e.valueForId(&mainDecl.Id)
+	if err != nil {
+		return err
+	}
+	mainClosure, ok := mainVal.(*ClosureValue)
+	if !ok {
+		return fmt.Errorf("main is not a function")
+	}
+	if len(mainClosure.Params) != 0 || len(mainClosure.ReturnTypes) != 0 {
+		return fmt.Errorf("main must have signature func()")
+	}
+	_, ctrlSig, err := e.callClosure(mainClosure, []Value{})
+	if err != nil {
+		return err
+	}
+	if ctrlSig != nil {
+		if ctrlSig.Kind == CtrlPanic {
+			if len(ctrlSig.Values) > 0 {
+				return fmt.Errorf("panic: %s", ctrlSig.Values[0].Inspect())
+			}
+			return fmt.Errorf("panic")
+		}
+		return fmt.Errorf("unexpected control signal: %v", ctrlSig.Kind)
+	}
+	return nil
+}
 
 func (e *Evaluator) pushEnvFrame(ef *EnvFrame) {
-	ef.ParentEnvFrame = e.currentEnvFrame
-	e.currentEnvFrame = ef
+	ef.ParentEnvFrame = e.CurrentEnv()
+	e.callStack.setEnvOfLastCallFrame(ef)
 }
-func (e *Evaluator) popEnvFrame() { e.currentEnvFrame = e.currentEnvFrame.ParentEnvFrame }
+func (e *Evaluator) popEnvFrame() {
+	e.callStack.setEnvOfLastCallFrame(e.CurrentEnv().ParentEnvFrame)
+}
+
+func (e *Evaluator) CurrentEnv() *EnvFrame {
+	return e.callStack.peekEnvOfLastCallFrame()
+}
+func (e *Evaluator) pushCallStack(ef *EnvFrame) {
+	e.callStack.pushCallFrame(ef)
+}
+func (e *Evaluator) popCallStack() {
+	e.callStack.popCallFrame()
+}
 
 func maxBuiltinSlot(slots map[string]int) int {
 	max := -1

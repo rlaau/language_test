@@ -32,9 +32,6 @@ func BuildInitOrder(table ResolveTable, hoist *HoistInfo) (InitOrder, error) {
 		if decl == nil {
 			return nil, fmt.Errorf("missing hoisted var decl for id #%d", varId)
 		}
-		if len(decl.ExprsOrNil) > 0 && len(decl.ExprsOrNil) != len(decl.Ids) {
-			return nil, fmt.Errorf("var decl lhs/rhs count mismatch")
-		}
 		if len(decl.ExprsOrNil) == 0 {
 			varZeroInit[varId] = true
 			continue

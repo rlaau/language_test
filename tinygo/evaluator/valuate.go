@@ -118,6 +118,7 @@ func (e *Evaluator) ValuateBinary(b *parser.Binary) ([]Value, *ControlSignal, er
 		// string+string연산을 지원함
 		// 둘 다  int인 경우가 아닐 경우, string집합 위의 +연산인지 검증함
 		if !lok || !rok {
+
 			if b.Op == parser.Plus {
 				leftStr, lsok := leftVal.(*StringValue)
 				rightStr, rsok := rightVal.(*StringValue)
@@ -214,7 +215,7 @@ func (e *Evaluator) ValuateValueForm(v *parser.ValueForm) (Value, error) {
 			return nil, fmt.Errorf("func literal missing body")
 		}
 		fexp := v.FexpOrNil
-		return newClosureVal(nil, fexp.ParamsOrNil, fexp.ReturnTypesOrNil, fexp.Block, e.currentEnvFrame), nil
+		return newClosureVal(nil, fexp.ParamsOrNil, fexp.ReturnTypesOrNil, fexp.Block, e.CurrentEnv()), nil
 	default:
 		return nil, fmt.Errorf("unknown value kind: %v", v.ValueKind)
 	}
@@ -276,10 +277,12 @@ func (e *Evaluator) callClosure(c *ClosureValue, args []Value) ([]Value, *Contro
 	if len(args) != len(c.Params) {
 		return nil, nil, fmt.Errorf("arg count mismatch")
 	}
-	// closure를 기반으로 환경 만든 후에 push
-	env := &EnvFrame{Slots: make([]Value, e.maxSlotFromParams(c.Params)+1), ParentEnvFrame: c.ParentEnv}
-	e.pushEnvFrame(env)
-	defer e.popEnvFrame()
+	// 함수 호출 시엔, 기존의 EnvList에서 pop, push하지 않고,
+	// 대신 새 콜스텍의 원소를 추가 후 그 위에서 pop,push를 함
+	newCallFrame := &EnvFrame{Slots: make([]Value, e.maxSlotFromParams(c.Params)+1), ParentEnvFrame: c.ParentEnv}
+	e.callStack.pushCallFrame(newCallFrame)
+	defer e.callStack.popCallFrame()
+
 	for i, param := range c.Params {
 		ref, ok := e.resolveTable[param.Id.IdId]
 		if !ok {
@@ -291,14 +294,14 @@ func (e *Evaluator) callClosure(c *ClosureValue, args []Value) ([]Value, *Contro
 		if ref.Slot < 0 {
 			return nil, nil, fmt.Errorf("negative slot for param")
 		}
-		if ref.Slot >= len(env.Slots) {
-			env.Slots = growSlots(env.Slots, ref.Slot+1)
+		if ref.Slot >= len(newCallFrame.Slots) {
+			newCallFrame.Slots = growSlots(newCallFrame.Slots, ref.Slot+1)
 		}
-		env.Slots[ref.Slot] = args[i]
+		newCallFrame.Slots[ref.Slot] = args[i]
 	}
 	//리졸버와 스코핑 로직 일치:
 	//param은 block과 같은 환경에서 존재
-	ctrlSig, err := e.EvalBlock(c.Block, true)
+	ctrlSig, err := e.evalBlock(c.Block, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -308,8 +311,12 @@ func (e *Evaluator) callClosure(c *ClosureValue, args []Value) ([]Value, *Contro
 	switch ctrlSig.Kind {
 	case CtrlReturn:
 		return ctrlSig.Values, nil, nil
-	default:
+	case CtrlPanic:
 		return nil, ctrlSig, nil
+	default:
+		//return, panic외의 제어신호는 함수 바깥으로 전파되지 못함
+		return nil, nil, fmt.Errorf("only \"return\" or \"panic\" control signals may propagate out of a function")
+
 	}
 }
 
@@ -331,9 +338,15 @@ func (e *Evaluator) valueForId(id *parser.Id) (Value, error) {
 		// 리졸버가 리졸빙 과정에서
 		// r.builtins-slot테이블에 맞춰서 레퍼런스에 알맞은 Slot을 주입했음을 가정함
 		return e.builtInSlots[ref.Slot], nil
-	case resolver.RefGlobal, resolver.RefLocal:
+	case resolver.RefGlobal:
+		env := e.globalEnvFrame
+		if ref.Slot < 0 || ref.Slot >= len(env.Slots) {
+			return nil, fmt.Errorf("env slot out of range")
+		}
+		return env.Slots[ref.Slot], nil
+	case resolver.RefLocal:
 		// 클로저가 제대로 동작한단 가정 하에 올바르게 동작함.
-		env, err := envAtDistance(e.currentEnvFrame, ref.Distance)
+		env, err := envAtDistance(e.CurrentEnv(), ref.Distance)
 		if err != nil {
 			return nil, err
 		}

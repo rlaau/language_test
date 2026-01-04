@@ -225,9 +225,10 @@ func newTestEvaluator(rt resolver.ResolveTable, env *EnvFrame) *Evaluator {
 		env = &EnvFrame{Slots: []Value{}}
 	}
 	e := &Evaluator{
-		resolveTable:    rt,
-		currentEnvFrame: env,
-		builtInSlots:    []Value{},
+		resolveTable:   rt,
+		callStack:      CallStack{callStack: []*EnvFrame{env}},
+		globalEnvFrame: env,
+		builtInSlots:   []Value{},
 	}
 	builtins := map[string]int{}
 	for i, name := range resolver.Builtins {

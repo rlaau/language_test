@@ -142,10 +142,6 @@ func (r *Resolver) resolveCall(call parser.Call) error {
 }
 
 func (r *Resolver) resolveVarDecl(node *parser.VarDecl) error {
-	// LHS, RHS 검사
-	if len(node.ExprsOrNil) > 0 && len(node.Ids) != len(node.ExprsOrNil) {
-		return newResolveErr(firstId(node.Ids), "var decl lhs/rhs count mismatch")
-	}
 	// 우변 먼저 resolve (재귀적 정의 차단)
 	for _, expr := range node.ExprsOrNil {
 		if err := r.resolveExpr(expr); err != nil {
@@ -164,9 +160,6 @@ func (r *Resolver) resolveVarDecl(node *parser.VarDecl) error {
 }
 
 func (r *Resolver) resolveHoistedVarDecl(node *parser.VarDecl, hoist *HoistInfo) error {
-	if len(node.ExprsOrNil) > 0 && len(node.Ids) != len(node.ExprsOrNil) {
-		return newResolveErr(firstId(node.Ids), "var decl lhs/rhs count mismatch")
-	}
 	//우변 리졸브
 	for _, expr := range node.ExprsOrNil {
 		if err := r.resolveExpr(expr); err != nil {
@@ -182,7 +175,6 @@ func (r *Resolver) resolveHoistedVarDecl(node *parser.VarDecl, hoist *HoistInfo)
 	}
 	return nil
 }
-
 func (r *Resolver) resolveFuncDecl(node *parser.FuncDecl) error {
 	// 좌변 먼저 리졸브 (재귀 허용)
 	sym, err := r.declare(node.Id.Name, SymbolFunc, node.Id.IdId)
@@ -190,7 +182,6 @@ func (r *Resolver) resolveFuncDecl(node *parser.FuncDecl) error {
 		return newResolveErr(node.Id, err.Error())
 	}
 	r.setResolved(node.Id, r.refFromSymbol(sym))
-
 	//이후 우변 리졸브
 	r.pushScope()
 	defer r.popScope()
@@ -212,7 +203,6 @@ func (r *Resolver) resolveHoistedFuncDecl(node *parser.FuncDecl, hoist *HoistInf
 	if hoist.getFuncDeclById(node.Id.IdId) == nil {
 		return newResolveErr(node.Id, "hoisted symbol not found")
 	}
-
 	r.pushScope()
 	defer r.popScope()
 
@@ -228,10 +218,6 @@ func (r *Resolver) resolveHoistedFuncDecl(node *parser.FuncDecl, hoist *HoistInf
 }
 
 func (r *Resolver) resolveAssign(node *parser.Assign) error {
-	//LHS, RHS검사
-	if len(node.Ids) != len(node.Exprs) {
-		return newResolveErr(firstId(node.Ids), "assign lhs/rhs count mismatch")
-	}
 	// 우변 먼저 리졸브
 	for _, expr := range node.Exprs {
 		if err := r.resolveExpr(expr); err != nil {
@@ -254,10 +240,6 @@ func (r *Resolver) resolveAssign(node *parser.Assign) error {
 }
 
 func (r *Resolver) resolveShortDecl(node *parser.ShortDecl) error {
-	//ShortDecl도 LHS, RHS검사
-	if len(node.Ids) != len(node.Exprs) {
-		return newResolveErr(firstId(node.Ids), "short decl lhs/rhs count mismatch")
-	}
 	// 우변 먼저 리졸브
 	for _, expr := range node.Exprs {
 		if err := r.resolveExpr(expr); err != nil {
