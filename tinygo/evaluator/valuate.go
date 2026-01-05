@@ -279,7 +279,11 @@ func (e *Evaluator) callClosure(c *ClosureValue, args []Value) ([]Value, *Contro
 	}
 	// 함수 호출 시엔, 기존의 EnvList에서 pop, push하지 않고,
 	// 대신 새 콜스텍의 원소를 추가 후 그 위에서 pop,push를 함
-	newCallFrame := &EnvFrame{Slots: make([]Value, e.maxSlotFromParams(c.Params)+1), ParentEnvFrame: c.ParentEnv}
+	newStartingEnv := &EnvFrame{Slots: make([]Value, e.maxSlotFromParams(c.Params)+1), ParentEnvFrame: c.ParentEnv}
+	newCallFrame := CallFrame{
+		currentEnv:  newStartingEnv,
+		funcIdOrNil: c.IdOrNil,
+	}
 	e.callStack.pushCallFrame(newCallFrame)
 	defer e.callStack.popCallFrame()
 
@@ -294,10 +298,10 @@ func (e *Evaluator) callClosure(c *ClosureValue, args []Value) ([]Value, *Contro
 		if ref.Slot < 0 {
 			return nil, nil, fmt.Errorf("negative slot for param")
 		}
-		if ref.Slot >= len(newCallFrame.Slots) {
-			newCallFrame.Slots = growSlots(newCallFrame.Slots, ref.Slot+1)
+		if ref.Slot >= len(newStartingEnv.Slots) {
+			newStartingEnv.Slots = growSlots(newStartingEnv.Slots, ref.Slot+1)
 		}
-		newCallFrame.Slots[ref.Slot] = args[i]
+		newStartingEnv.Slots[ref.Slot] = args[i]
 	}
 	//리졸버와 스코핑 로직 일치:
 	//param은 block과 같은 환경에서 존재
@@ -305,6 +309,7 @@ func (e *Evaluator) callClosure(c *ClosureValue, args []Value) ([]Value, *Contro
 	if err != nil {
 		return nil, nil, err
 	}
+	// 리턴이 없다면 아무 값도 전파하지 않음
 	if ctrlSig == nil {
 		return []Value{}, nil, nil
 	}

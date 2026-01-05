@@ -56,7 +56,6 @@ func TestEvalMain_BlockShadowing(t *testing.T) {
 		t.Fatalf("expected a=1, got %v", aVal.Inspect())
 	}
 }
-
 func TestEvalMain_HigherOrderCounter(t *testing.T) {
 	input := "var a int = 0; var b int = 0; var c int = 0; var d int = 0; func GetCounter() func() int { count := 0; func inc() int { count = count + 1; return count; } return inc; } func main(){ c1 := GetCounter(); c2 := GetCounter(); a = c1(); b = c1(); c = c2(); d = c2(); }"
 	e, pkg := evalMainFromInput(t, input)

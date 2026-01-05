@@ -76,6 +76,7 @@ var builtinRegistry = map[string]BuiltinFunc{
 			return []Value{newIntVal(int64(len(str.Value)))}, nil, nil
 		},
 	},
+	//TODO scan은 현재 구현 실패. 포인터 전달 필요
 	"scan": {
 		Name: "scan",
 		Impl: func(e *Evaluator, args []Value) ([]Value, *ControlSignal, error) {

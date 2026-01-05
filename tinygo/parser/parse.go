@@ -358,10 +358,11 @@ func (p *Parser) parseIf() (*If, error) {
 		rollBack()
 	}
 
-	bexp, err := p.parseBexp()
+	bexp, err := p.parseExpr()
 	if err != nil {
 		return nil, NewParseError("If", err)
 	}
+
 	thenBlock, err := p.parseBlock()
 	if err != nil {
 		return nil, NewParseError("If", err)
@@ -450,13 +451,13 @@ func (p *Parser) parseBlock() (*Block, error) {
 		rollBack := p.tape.GetRollback()
 		stms, err := p.parseStmt()
 		if err != nil {
-
 			rollBack()
 
 			break
 		}
 		stmts = append(stmts, stms)
 	}
+
 	if p.match(token.RBRACE) != nil {
 		return nil, NewParseError("Block", errors.New("맺음 위치에 \"}\"기호가 존재하지 않음."))
 	}

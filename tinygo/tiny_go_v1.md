@@ -8,13 +8,13 @@
 
 ```go
 func main(){
-    a, b := 4, 2
+    a, b := 4, 2 ;
     divided, err := divide(a,b);
     if err != ok {
-        print(errString(err))
-        panic(err)
+        print(errString(err));
+        panic(err);
     }
-    print("4 나누기 2는" + intToString(divided))
+    print("4 divide 2 is" + intToString(divided));
 
 }
 
@@ -22,32 +22,32 @@ func divide(a int, b int) (int, error) {
     if b == 0 {
         return 0, newError("can't divide by zero");
     }
-    return a/b, ok
+    return a/b, ok ;
 }
 
 func intToString(i int) string {
     if i == 0 {
-        return digitToString(0)
+        return digitToString(0);
     }
 
-    lastDigit := i- 10*(i/10)
-    reduced := i/10
-    return intToString(reduced)+digitToString(lastDigit) 
+    lastDigit := i- 10*(i/10);
+    reduced := i/10;
+    return intToString(reduced)+digitToString(lastDigit) ;
 }
 
 func digitToString(i int) string {
     if i > 9 || i < 0 {
-        panic("err")
+        panic("out of digit range");
     }
     if i == 0 {
-        return "0"
+        return "0";
     }
     //...반복은 생략...//
 
     if i == 9 {
-        return "9"
+        return "9";
     }
-    return "0"
+    return "0";
 }
 
 ```

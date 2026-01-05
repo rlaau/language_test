@@ -225,8 +225,12 @@ func newTestEvaluator(rt resolver.ResolveTable, env *EnvFrame) *Evaluator {
 		env = &EnvFrame{Slots: []Value{}}
 	}
 	e := &Evaluator{
-		resolveTable:   rt,
-		callStack:      CallStack{callStack: []*EnvFrame{env}},
+		resolveTable: rt,
+		callStack: CallStack{callFrames: []CallFrame{
+			{
+				currentEnv: env,
+			},
+		}},
 		globalEnvFrame: env,
 		builtInSlots:   []Value{},
 	}

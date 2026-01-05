@@ -21,20 +21,40 @@ type Evaluator struct {
 	debug bool
 }
 
-// CallStack은 함수 호출마다 새로 생성되는 EnvList를 보관하는 자료구조임
-type CallStack struct{ callStack []*EnvFrame }
-
-func (cs *CallStack) peekEnvOfLastCallFrame() *EnvFrame {
-	return cs.callStack[len(cs.callStack)-1]
+// CallStack은 함수 호출마다 새로 생성되는 CallFrame을 스택 형태로 보관한다.
+type CallStack struct {
+	callFrames []CallFrame
 }
-func (cs *CallStack) pushCallFrame(ef *EnvFrame) {
-	cs.callStack = append(cs.callStack, ef)
+
+// CallFrame은 함수 호출마다 생성되며,
+// currentEnv는 함수 호출에서 발생하는 envFrame의 스택 중 top에 있는 envFrame이다.
+type CallFrame struct {
+	funcIdOrNil *parser.Id
+	currentEnv  *EnvFrame
+}
+
+func (cf *CallFrame) String() string {
+	idOrNil := cf.funcIdOrNil
+	if idOrNil != nil {
+		return fmt.Sprintf("<funcName: %s, IdId: %d \n currentEnv: %v>", idOrNil.Name, idOrNil.IdId, cf.currentEnv)
+	}
+	return fmt.Sprintf("anonymous func, IdId: %d\n currentEnv: %v", idOrNil.IdId, cf.currentEnv)
+}
+func (cs *CallStack) pushCallFrame(cf CallFrame) {
+	cs.callFrames = append(cs.callFrames, cf)
 }
 func (cs *CallStack) popCallFrame() {
-	cs.callStack = cs.callStack[0 : len(cs.callStack)-1]
+	cs.callFrames = cs.callFrames[0 : len(cs.callFrames)-1]
 }
-func (cs *CallStack) setEnvOfLastCallFrame(ef *EnvFrame) {
-	cs.callStack[len(cs.callStack)-1] = ef
+
+// peekMostCurrentEnv는 가장 최신 callFrame의 currentEnv를 리턴한다
+func (cs *CallStack) peekMostCurrentEnv() *EnvFrame {
+	return cs.callFrames[len(cs.callFrames)-1].currentEnv
+}
+
+// setMostCurrentEnv는 가장 최신 callFrame의 currentEnv의 값을 바꾼다.
+func (cs *CallStack) setMostCurrentEnv(ef *EnvFrame) {
+	cs.callFrames[len(cs.callFrames)-1].currentEnv = ef
 }
 func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, initOrder resolver.InitOrder, resolveTable resolver.ResolveTable, builtins map[string]int) (*Evaluator, error) {
 
@@ -100,7 +120,12 @@ func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, i
 		packageAST:   packageAst,
 		resolveTable: resolveTable,
 		callStack: CallStack{
-			callStack: []*EnvFrame{globalEnv},
+			callFrames: []CallFrame{
+				{
+					currentEnv:  globalEnv,
+					funcIdOrNil: nil,
+				},
+			},
 		},
 		globalEnvFrame: globalEnv,
 		builtInSlots:   []Value{},
@@ -185,6 +210,7 @@ func NewEvaluator(packageAst parser.PackageAST, hoistInfo *resolver.HoistInfo, i
 	return e, nil
 }
 
+// EnvFrame은 현재 스코프에서의 환경을 나타냄
 type EnvFrame struct {
 	Slots          []Value // SLot에 따른 Value
 	ParentEnvFrame *EnvFrame
@@ -237,25 +263,25 @@ func (e *Evaluator) EvalMainFunc() error {
 		}
 		return fmt.Errorf("unexpected control signal: %v", ctrlSig.Kind)
 	}
+	if e.debug == true {
+		for i, e := range e.callStack.callFrames {
+			fmt.Printf("%dth CallFame:", i)
+			fmt.Println(e.String())
+		}
+	}
 	return nil
 }
 
 func (e *Evaluator) pushEnvFrame(ef *EnvFrame) {
 	ef.ParentEnvFrame = e.CurrentEnv()
-	e.callStack.setEnvOfLastCallFrame(ef)
+	e.callStack.setMostCurrentEnv(ef)
 }
 func (e *Evaluator) popEnvFrame() {
-	e.callStack.setEnvOfLastCallFrame(e.CurrentEnv().ParentEnvFrame)
+	e.callStack.setMostCurrentEnv(e.CurrentEnv().ParentEnvFrame)
 }
 
 func (e *Evaluator) CurrentEnv() *EnvFrame {
-	return e.callStack.peekEnvOfLastCallFrame()
-}
-func (e *Evaluator) pushCallStack(ef *EnvFrame) {
-	e.callStack.pushCallFrame(ef)
-}
-func (e *Evaluator) popCallStack() {
-	e.callStack.popCallFrame()
+	return e.callStack.peekMostCurrentEnv()
 }
 
 func maxBuiltinSlot(slots map[string]int) int {
